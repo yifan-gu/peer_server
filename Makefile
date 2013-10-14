@@ -8,10 +8,12 @@ LDFLAGS	= -lm
 
 TESTDEFS	= -DTESTING			# comment this out to disable debugging code
 
-_HEADERS = bt_parse.h  chunk.h  debug.h  debug-text.h  input_buffer.h  sha.h  spiffy.h
+_HEADERS = bt_parse.h  chunk.h  debug.h  debug-text.h  input_buffer.h  sha.h  spiffy.h \
+		   logger.h
 HEADERS = $(patsubst %,$(IDIR)/%,$(_HEADERS))
 
-_OBJS = peer.o bt_parse.o spiffy.o debug.o input_buffer.o chunk.o sha.o
+_OBJS = peer.o bt_parse.o spiffy.o debug.o input_buffer.o chunk.o sha.o \
+		logger.o
 OBJS = $(patsubst %,$(ODIR)/%,$(_OBJS))
 
 _MK_CHUNK_OBJS   = make_chunks.o chunk.o sha.o

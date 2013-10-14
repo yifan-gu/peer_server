@@ -16,10 +16,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "debug.h"
-#include "spiffy.h"
-#include "bt_parse.h"
-#include "input_buffer.h"
+#include <debug.h>
+#include <spiffy.h>
+#include <bt_parse.h>
+#include <input_buffer.h>
+
+#include <logger.h>
 
 void peer_run(bt_config_t *config);
 

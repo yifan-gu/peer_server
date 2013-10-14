@@ -6,7 +6,7 @@
 #include <stdlib.h>
 #include <ctype.h>
 #include <string.h>
-#include "debug.h"
+#include <debug.h>
 
 unsigned int debug = 0;
 
