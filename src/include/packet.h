@@ -22,8 +22,21 @@ char hash_bin_buf[SHA1_HASH_SIZE];
  * @param buf, the raw buf recvfrom peers, it's uint8_t*
  * @param pkt, a pointer to a packet_t struct
  */
-#define DECODE_PKT(buf, pkt, size) (memcpy((pkt), (buf), (size)))
-#define ENCODE_PKT(buf, pkt, size) (memcpy((buf), (pkt), (size)))
+#define DECODE_PKT(buf, pkt, size)                                      \
+    memcpy((pkt), (buf), (size));                                       \
+    pkt->magic = ntohs(pkt->magic);                                     \
+    pkt->hdr_len = ntohs(pkt->hdr_len);                                 \
+    pkt->pkt_len = ntohs(pkt->pkt_len);                                 \
+    pkt->seq = ntohl(pkt->seq);                                         \
+    pkt->ack = ntohl(pkt->ack)
+
+#define ENCODE_PKT(buf, pkt, size)                                      \
+    pkt->magic = htons(pkt->magic);                                     \
+    pkt->hdr_len = htons(pkt->hdr_len);                                 \
+    pkt->pkt_len = htons(pkt->pkt_len);                                 \
+    pkt->seq = htonl(pkt->seq);                                         \
+    pkt->ack = htonl(pkt->ack);                                         \
+    memcpy((buf), (pkt), (size))
 
 /**
  * Get / Set chunk numbers
