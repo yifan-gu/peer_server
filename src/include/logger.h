@@ -1,7 +1,6 @@
 #ifndef _LOGGER_H
 #define _LOGGER_H
 
-
 #define LOG_DEBUG 0
 #define LOG_INFO 1
 #define LOG_WARN 2
@@ -10,6 +9,8 @@
 #define LOGLEVEL LOG_DEBUG
 //#define LOGLEVEL LOG_INFO
 //#define LOGLEVEL LOG_WARN
+//#define LOGLEVEL -1
+
 
 #define logger(level, ...) \
 { \

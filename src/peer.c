@@ -23,6 +23,7 @@
 #include <input_buffer.h>
 
 #include <logger.h>
+#include <peer_server.h>
 
 void peer_run(bt_config_t *config);
 
@@ -46,6 +47,11 @@ int main(int argc, char **argv) {
     bt_dump_config(&config);
   }
 #endif
+
+  if(peer_init(&config) < 0){
+      logger(LOG_ERROR, "Peer init failed!");
+      exit(0);
+  }
 
   peer_run(&config);
   return 0;
@@ -71,6 +77,7 @@ void process_inbound_udp(int sock) {
 void process_get(char *chunkfile, char *outputfile) {
   printf("PROCESS GET SKELETON CODE CALLED.  Fill me in!  (%s, %s)\n",
 	chunkfile, outputfile);
+
 }
 
 void handle_user_input(char *line, void *cbdata) {
