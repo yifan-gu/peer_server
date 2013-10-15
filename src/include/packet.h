@@ -24,21 +24,47 @@ char hash_bin_buf[SHA1_HASH_SIZE];
  * @param buf, the raw buf recvfrom peers, it's uint8_t*
  * @param pkt, a pointer to a packet_t struct
  */
-#define DECODE_PKT(buf, pkt, size)                                      \
-    memcpy((pkt), (buf), (size));                                       \
-    pkt->magic = ntohs(pkt->magic);                                     \
-    pkt->hdr_len = ntohs(pkt->hdr_len);                                 \
-    pkt->pkt_len = ntohs(pkt->pkt_len);                                 \
-    pkt->seq = ntohl(pkt->seq);                                         \
-    pkt->ack = ntohl(pkt->ack)
+#define DECODE_PKT(buf, pkt, size)              \
+    memcpy((pkt), (buf), (size));               \
+    (pkt)->magic = ntohs((pkt)->magic);         \
+    (pkt)->hdr_len = ntohs((pkt)->hdr_len);     \
+    (pkt)->pkt_len = ntohs((pkt)->pkt_len);     \
+    (pkt)->seq = ntohl((pkt)->seq);             \
+    (pkt)->ack = ntohl((pkt)->ack)
 
-#define ENCODE_PKT(buf, pkt, size)                                      \
-    pkt->magic = htons(pkt->magic);                                     \
-    pkt->hdr_len = htons(pkt->hdr_len);                                 \
-    pkt->pkt_len = htons(pkt->pkt_len);                                 \
-    pkt->seq = htonl(pkt->seq);                                         \
-    pkt->ack = htonl(pkt->ack);                                         \
+#define ENCODE_PKT(buf, pkt, size)                 \
+    (pkt)->magic = htons((pkt)->magic);            \
+    (pkt)->hdr_len = htons((pkt)->hdr_len);        \
+    (pkt)->pkt_len = htons((pkt)->pkt_len);        \
+    (pkt)->seq = htonl((pkt)->seq);                \
+    (pkt)->ack = htonl((pkt)->ack);                \
     memcpy((buf), (pkt), (size))
+
+/**
+ * a couple of macros to make life easier
+ */
+#define GET_MAGIC(pkt) ((pkt)->magic)
+#define SET_MAGIC(pkt, v) ((pkt)->magic = (v))
+
+#define GET_VERSION(pkt) ((pkt)->version)
+#define SET_VERSION(pkt, v) ((pkt)->version = (v))
+
+#define GET_TYPE(pkt) ((pkt)->type)
+#define SET_TYPE(pkt, v) ((pkt)->type = (v))
+
+#define GET_HDR_LEN(pkt) ((pkt)->hdr_len)
+#define SET_HDR_LEN(pkt, v) ((pkt)->hdr_len = (v))
+
+#define GET_PKT_LEN(pkt) ((pkt)->pkt_len)
+#define SET_PKT_LEN(pkt, v) ((pkt)->pkt_len = (v))
+
+#define GET_SEQ(pkt) ((pkt)->seq)
+#define SET_SEQ(pkt, v) ((pkt)->seq = (v))
+
+#define GET_ACK(pkt) ((pkt)->ack)
+#define SET_ACK(pkt, v) ((pkt)->ack = (v))
+
+#define GET_PAYLOAD(pkt) ((pkt)->payload(0+EXT_HEADER_SIZE(pkt)))
 
 /**
  * Get / Set chunk numbers, EXT_HEADER_SIZE is reserved for other implementations
@@ -61,6 +87,7 @@ char hash_bin_buf[SHA1_HASH_SIZE];
 #define SET_HASH(pkt, n, hash)                                          \
     hex2binary((hash), SHA1_HASH_SIZE*2, hash_bin_buf);                 \
     memcpy((pkt)->payload+EXT_HEADER_SIZE(pkt)+4+(n)*SHA1_HASH_SIZE, hash_bin_buf, SHA1_HASH_SIZE)
+
 
 /**
  * types of a packet
@@ -88,6 +115,7 @@ typedef struct packet_s {
     
     uint8_t payload[MAX_PAYLOAD_SIZE]; // either DATA or HASHs
 } packet_t;
+
 
 /**
  * make a packet into buffer
