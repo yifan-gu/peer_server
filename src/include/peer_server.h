@@ -7,7 +7,12 @@
 
 #define MAX_CHUNK_NUM 1024
 
+enum ChunkState{
+  unfetched, fetching, fetched
+};
+
 typedef struct _ChunkLine{
+  enum ChunkState state; //
   int id;
   char sha1[SHA1_HASH_SIZE*2 + 1];
 }ChunkLine;

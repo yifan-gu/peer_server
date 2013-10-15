@@ -25,7 +25,7 @@ BINS = peer make-chunks
 TESTBINS = test_packet
 
 # Explit build and testing targets
-all: ${BINS} ${TESTBINS}
+all: ${BINS}
 
 test: ${TESTBINS}
 
@@ -41,7 +41,7 @@ $(ODIR)/%.o: $(SRCDIR)/%.c $(HEADERS)
 .PHONY: clean
 clean:
 	@rm -f $(BINS) \
-		$(ODIR)/* $(SRCDIR)/*~ $(IDIR)/*~ $(SRCDIR)/*.orig $(IDIR)/*.orig
+		$(ODIR)/* $(SRCDIR)/*~ $(IDIR)/*~ $(SRCDIR)/*.orig $(IDIR)/*.orig test/*
 
 test_packet:
 	$(CC) -I$(IDIR) $(TESTDIR)/test_packet.c $(SRCDIR)/chunk.c $(SRCDIR)/sha.c -o test/test_packet
