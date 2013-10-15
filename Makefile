@@ -1,4 +1,4 @@
-IDIR =src/inc
+IDIR =src/include
 ODIR=src/obj
 SRCDIR=src
 
