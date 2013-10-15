@@ -6,8 +6,6 @@
 /*
 @brief
   This log function simulates normal logging system.
-  LIMITATION:
-    For varaibles passed behind, currently it supports only "%d" and "%s"
  */
 void log_print(int level, char* filename, int line, char *fmt,...)
 {
