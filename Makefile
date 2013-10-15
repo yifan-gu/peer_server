@@ -14,13 +14,11 @@ _HEADERS = bt_parse.h  chunk.h  debug.h  debug-text.h  input_buffer.h  sha.h  sp
 HEADERS = $(patsubst %,$(IDIR)/%,$(_HEADERS))
 
 _OBJS = peer.o bt_parse.o spiffy.o debug.o input_buffer.o chunk.o sha.o \
-		logger.o 
+		logger.o
 OBJS = $(patsubst %,$(ODIR)/%,$(_OBJS))
 
 _MK_CHUNK_OBJS   = make_chunks.o chunk.o sha.o
 MK_CHUNK_OBJS = $(patsubst %,$(ODIR)/%,$(_MK_CHUNK_OBJS))
-
-TESTDEFS	= -DTESTING			# comment this out to disable debugging code
 
 BINS = peer make-chunks
 
@@ -46,4 +44,4 @@ clean:
 		$(ODIR)/* $(SRCDIR)/*~ $(IDIR)/*~ $(SRCDIR)/*.orig $(IDIR)/*.orig
 
 test_packet:
-	$(CC) -I$(IDIR) $(TESTDIR)/test_packet.c $(SRCDIR)/chunk.c $(SRCDIR)/sha.c -o test_packet
+	$(CC) -I$(IDIR) $(TESTDIR)/test_packet.c $(SRCDIR)/chunk.c $(SRCDIR)/sha.c -o test/test_packet

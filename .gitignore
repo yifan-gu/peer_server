@@ -16,7 +16,6 @@
 *.exe
 *.app
 
-test_debug
-test_input_buffer
+test/
 peer
 make-chunks
