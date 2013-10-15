@@ -25,6 +25,8 @@
 #include <logger.h>
 #include <peer_server.h>
 
+extern ChunkList getchunks;
+
 void peer_run(bt_config_t *config);
 
 int main(int argc, char **argv) {
@@ -74,9 +76,15 @@ void process_inbound_udp(int sock) {
            buf);
 }
 
+
 void process_get(char *chunkfile, char *outputfile) {
     printf("PROCESS GET SKELETON CODE CALLED.  Fill me in!  (%s, %s)\n",
            chunkfile, outputfile);
+    if ( parse_chunk(&getchunks, chunkfile) < 0 ){
+        logger(LOG_WARN, "Can't parse chunk file: %s", chunkfile);
+        return;
+    }
+
 
 }
 
