@@ -1,3 +1,7 @@
+/*
+ * A simple implementation for packet I/O
+ * @author: Yifan Gu <yifang@cs.cmu.edu>
+ */
 #ifndef _PACKET_H_
 #define _PACKET_H_
 
@@ -15,10 +19,13 @@ char hash_bin_buf[SHA1_HASH_SIZE];
 #define MAGIC 15441
 #define VERSION 1
 #define HEADER_SIZE 16
-#define EXT_HEADER_SIZE(pkt) (HEADER_SIZE - (pkt)->hdr_len)
 #define PACKET_SIZE 1500 // udp packet size
-#define MAX_PAYLOAD_SIZE (PACKET_SIZE - HEADER_SIZE)
 
+/**
+ * to be compatible with other implementations
+ */
+#define EXT_HEADER_SIZE(pkt) (HEADER_SIZE - (pkt)->hdr_len)
+#define MAX_PAYLOAD_SIZE (PACKET_SIZE - HEADER_SIZE)
 /**
  * Decode / Encode packet from / to buffer
  * @param buf, the raw buf recvfrom peers, it's uint8_t*
@@ -85,9 +92,8 @@ char hash_bin_buf[SHA1_HASH_SIZE];
     binary2hex(((pkt)->payload+EXT_HEADER_SIZE(pkt)+4+(n)*SHA1_HASH_SIZE), SHA1_HASH_SIZE, (hexbuf))
 
 #define SET_HASH(pkt, n, hash)                                          \
-    hex2binary((hash), SHA1_HASH_SIZE*2, hash_bin_buf);                 \
+    hex2binary((hash), SHA1_HASH_STR_SIZE, hash_bin_buf);                 \
     memcpy((pkt)->payload+EXT_HEADER_SIZE(pkt)+4+(n)*SHA1_HASH_SIZE, hash_bin_buf, SHA1_HASH_SIZE)
-
 
 /**
  * types of a packet
@@ -115,7 +121,6 @@ typedef struct packet_s {
     
     uint8_t payload[MAX_PAYLOAD_SIZE]; // either DATA or HASHs
 } packet_t;
-
 
 /**
  * make a packet into buffer
