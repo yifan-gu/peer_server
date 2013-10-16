@@ -47,7 +47,6 @@ int main(int argc, char *argv[])
     char *filename = "tmp/Big.chunks";
 
     ChunkList cl;
-    int i;
     
     printf("Test packeting\n");
 
@@ -93,7 +92,7 @@ int main(int argc, char *argv[])
     send_packet(0, NULL, 0, 0, &cl, 0, -1, PACKET_TYPE_WHOHAS, 0, 0, NULL, 0);
     
     printf("testing send_packet(data)\n");
-    send_packet(0, NULL, 0, 0, &cl, 0, -1, PACKET_TYPE_DATA, 1, 1, data, strlen(data)+1);
+    send_packet(0, NULL, 0, 0, &cl, 0, -1, PACKET_TYPE_DATA, 1, 1, (uint8_t *)data, strlen(data)+1);
 
     printf("PASS\n");
 
@@ -116,7 +115,7 @@ void test_message(uint8_t *buf, int i, ChunkList *cl) {
 
         check_pkt_header(&pkt_clone, PACKET_TYPE_DATA, 16, strlen(data)+1+HEADER_SIZE, 1, 0, 0);
 
-        assert(0 == strcmp(data, GET_PAYLOAD(&pkt_clone)));
+        assert(0 == strcmp(data, (char *)GET_PAYLOAD(&pkt_clone)));
 
         return;
     }

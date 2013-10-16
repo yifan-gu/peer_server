@@ -11,11 +11,12 @@
 #include "sha.h"
 #include "logger.h"
 #include "peer_server.h"
+#include "chunk.h"
 
 /**
  * The hashcode in binary
  */
-char hash_bin_buf[SHA1_HASH_SIZE];
+uint8_t hash_bin_buf[SHA1_HASH_SIZE];
 
 #define MAGIC 15441
 #define VERSION 1
@@ -81,6 +82,7 @@ char hash_bin_buf[SHA1_HASH_SIZE];
 #define GET_ACK(pkt) ((pkt)->ack)
 #define SET_ACK(pkt, v) ((pkt)->ack = (v))
 
+#define GET_PAYLOAD_LEN(pkt) ((pkt)->pkt_len - (pkt)->hdr_len)
 #define GET_PAYLOAD(pkt) ((pkt)->payload + EXT_HEADER_SIZE(pkt))
 
 /**

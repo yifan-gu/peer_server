@@ -2,6 +2,10 @@
 
 #include "packet.h"
 
+#ifdef TESTING_PACKET
+extern void test_message(uint8_t *buf, int i, ChunkList *cl);
+#endif
+
 /**
  * send packets via udp
  * @param socket, the socket fd
@@ -15,7 +19,6 @@ void send_udp(int socket, PeerList *p, int p_index, int p_count, uint8_t *buf, s
     int i, ret;
 
     for (i = 0; i < p_count; i++) {
-        
         ret = sendto(socket, buf, len, 0,
                      (struct sockaddr *) & (p->arr[p_index+i].addr), sizeof(p->arr[p_index+i].addr));
         if (ret < 0) {
@@ -125,7 +128,7 @@ void send_packet(int socket, PeerList *p, int p_index, int p_count,
         len = GET_PKT_LEN(&pkt);
         ENCODE_PKT(buf, &pkt, GET_PKT_LEN(&pkt));
 
-        #ifdef TESTING
+        #ifdef TESTING_PACKET
         test_message(buf, i, c);
         #endif
 
@@ -168,7 +171,12 @@ void print_packet(packet_t *pkt) {
             GET_HASH(pkt, i, hex);
             printf("%d %s\n", i, hex);
         }
+    } else {
+        if (type == PACKET_TYPE_DATA) {
+            printf("payload: %s\n", GET_PAYLOAD(pkt));
+        }
     }
+    
     
     printf("\n");
 }
