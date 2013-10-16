@@ -24,8 +24,12 @@
 
 #include <logger.h>
 #include <peer_server.h>
+#include <packet.h>
+#include <parse_packet.h>
 
 extern ChunkList getchunks;
+extern PeerList peerlist;
+int sock;
 
 void peer_run(bt_config_t *config);
 
@@ -65,19 +69,28 @@ void process_inbound_udp(int sock) {
     struct sockaddr_in from;
     socklen_t fromlen;
     char buf[BUFLEN];
+    packet_t pkt;
+    int ret;
 
     fromlen = sizeof(from);
-    spiffy_recvfrom(sock, buf, BUFLEN, 0, (struct sockaddr *) &from, &fromlen);
+    ret = spiffy_recvfrom(sock, buf, BUFLEN, 0, (struct sockaddr *) &from, &fromlen);
 
     printf("PROCESS_INBOUND_UDP SKELETON -- replace!\n"
-           "Incoming message from %s:%d\n%s\n\n",
+           "Incoming message from %s:%d\n\n\n",
            inet_ntoa(from.sin_addr),
-           ntohs(from.sin_port),
-           buf);
+           ntohs(from.sin_port));
+
+
+    DECODE_PKT(buf, &pkt, ret);
+    print_packet(&pkt);
+
+    parse_packet(&pkt);
 }
 
 
 void process_get(char *chunkfile, char *outputfile) {
+    pkt_param_t param;
+
     printf("PROCESS GET SKELETON CODE CALLED.  Fill me in!  (%s, %s)\n",
            chunkfile, outputfile);
     if ( parse_chunk(&getchunks, chunkfile) < 0 ){
@@ -85,7 +98,15 @@ void process_get(char *chunkfile, char *outputfile) {
         return;
     }
 
+    PKT_PARAM_CLEAR(&param);
+    param.socket = sock;
+    param.p = &peerlist;
+    param.p_count = -1;
+    param.c = &getchunks;
+    param.c_count = -1;
 
+    param.type = PACKET_TYPE_WHOHAS;
+    send_packet(&param);
 }
 
 void handle_user_input(char *line, void *cbdata) {
@@ -103,7 +124,6 @@ void handle_user_input(char *line, void *cbdata) {
 
 
 void peer_run(bt_config_t *config) {
-    int sock;
     struct sockaddr_in myaddr;
     fd_set readfds;
     struct user_iobuf *userbuf;
