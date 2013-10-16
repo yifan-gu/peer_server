@@ -1,0 +1,169 @@
+#include <stdio.h>
+
+#include "packet.h"
+
+/**
+ * send packets via udp
+ * @param socket, the socket fd
+ * @param p, the peerlist
+ * @param p_index, from which peer I will start sending
+ * @param p_count, number of peers I will try to send
+ * @param buf, data buffer
+ * @param len, data buffer length
+ */
+void send_udp(int socket, PeerList *p, int p_index, int p_count, uint8_t *buf, size_t len) {
+    int i, ret;
+
+    for (i = 0; i < p_count; i++) {
+        
+        ret = sendto(socket, buf, len, 0,
+                     (struct sockaddr *) & (p->arr[p_index+i].addr), sizeof(p->arr[p_index+i].addr));
+        if (ret < 0) {
+            logger(LOG_ERROR, "sendto() failed");
+        }
+    }
+}
+
+/**
+ * send non-data messages to peers
+ * @param socket, the socket fd
+ * @param p, the peerlist
+ * @param p_index, from which peer to start sending
+ * @param p_count, number of peers to send, -1 means broadcast
+ * @param c, the chunklist
+ * @param c_index, from which chunk to start copying hash
+ * @param c_count, number of chunks in the list I will send, -1 means all
+ * @param type, packet type
+ * @param seq, seq number
+ * @param ack, ack number
+ * @param data, the payload data
+ * @param data_size, the size of the payload data
+ */
+void send_message(int socket, PeerList *p, int p_index, int p_count,
+                  ChunkList *c, int c_index ,int c_count,
+                  uint8_t type, uint32_t seq, uint32_t ack,
+                  uint8_t *payload, size_t payload_size) {
+    packet_t pkt;
+    int pkt_num = 1;
+    int cnt, i, j = 0;
+    size_t len;
+
+    uint8_t buf[PACKET_SIZE];
+
+    /* broadcasts */
+    if (p_count < 0) {
+        p_count = p->count;
+    }
+
+    if (c_count < 0) {
+        c_count = c->count;
+    }
+
+    if (p_index < 0 || c_index < 0) {
+        logger(LOG_ERROR, "invalid peer or chunk index %d, %d", p_index, c_index);
+        return;
+    }
+
+    /* compute number of packets needed */
+    if (NULL != c && (PACKET_TYPE_WHOHAS == type
+                      || PACKET_TYPE_IHAVE == type
+                      || PACKET_TYPE_GET == type)) { // types will have chunks
+        pkt_num = (c_count * SHA1_HASH_SIZE + MAX_PAYLOAD_SIZE - 1) / MAX_PAYLOAD_SIZE;
+    }
+
+    for (i = 0; i < pkt_num; i++) {
+
+        /* set some common header fields */
+        SET_MAGIC(&pkt, MAGIC);
+        SET_VERSION(&pkt, VERSION);
+        SET_TYPE(&pkt, type);
+        SET_HDR_LEN(&pkt, HEADER_SIZE);
+        SET_SEQ(&pkt, 0);
+        SET_ACK(&pkt, 0);
+
+        SET_PKT_LEN(&pkt, HEADER_SIZE);
+
+        /* set seq or ack */
+        if (PACKET_TYPE_DATA == type) {
+            SET_SEQ(&pkt, seq);
+        }
+
+        if (PACKET_TYPE_ACK == type) {
+            SET_ACK(&pkt, ack);
+        }
+
+        if (NULL != c
+            && (PACKET_TYPE_WHOHAS == type
+                || PACKET_TYPE_IHAVE == type
+                || PACKET_TYPE_GET == type)) { // types will have chunks
+            
+            
+            SET_PKT_LEN(&pkt, GET_PKT_LEN(&pkt) + 4); // 4 bytes for hash count
+            
+            /* iterate on chunk to add chunk hash, and update pkt_len */
+            for (cnt = 0; j < MIN(c_count, HASH_NUM_PKT*(i+1)); j++, cnt++) {
+                SET_HASH(&pkt, cnt, c->chunks[c_index+j].sha1);
+            }
+
+            /* update packet length and chunk counts */
+            SET_PKT_LEN(&pkt, GET_PKT_LEN(&pkt) + SHA1_HASH_SIZE * cnt);
+            SET_CHUNK_CNT(&pkt, cnt);
+
+            /* set payload data */
+        } else if (PACKET_TYPE_DATA == type && NULL != payload) {
+            
+            if (payload_size > MAX_PAYLOAD_SIZE) {
+                logger(LOG_ERROR, "payload size too big %lu", payload_size);
+                return;
+            }
+        
+            memcpy(pkt.payload, payload, payload_size);
+            SET_PKT_LEN(&pkt, HEADER_SIZE+payload_size);
+        }
+
+        len = GET_PKT_LEN(&pkt);
+        ENCODE_PKT(buf, &pkt, GET_PKT_LEN(&pkt));
+
+        #ifdef TESTING
+        test_message(buf, i, c);
+        #endif
+        
+        send_udp(socket, p, p_index, p_count, buf, len);
+    }
+}
+
+/**
+ * a helper for debugging
+ */
+void print_packet(packet_t *pkt) {
+    int i, type;
+    char hex[SHA1_HASH_STR_SIZE+1];
+    
+    printf("-----------------\n");
+    printf("Magic: %d\t|\n", GET_MAGIC(pkt));
+    printf("Version: %d\t|\n", GET_VERSION(pkt));
+    printf("Type: %d\t\t|\n", GET_TYPE(pkt));
+    printf("Hdr_len: %d\t|\n", GET_HDR_LEN(pkt));
+    printf("Pkt_len: %d\t|\n", GET_PKT_LEN(pkt));
+    printf("Seq: %d\t\t|\n", GET_SEQ(pkt));
+    printf("Ack: %d\t\t|\n", GET_ACK(pkt));
+
+    type = GET_TYPE(pkt);
+    if (type == PACKET_TYPE_WHOHAS
+        || type == PACKET_TYPE_IHAVE
+        || type == PACKET_TYPE_GET) {
+        printf("Chunk_cnt: %d\t|\n", GET_CHUNK_CNT(pkt));
+    }
+    printf("-----------------\n");
+
+    if (type == PACKET_TYPE_WHOHAS
+        || type == PACKET_TYPE_IHAVE
+        || type == PACKET_TYPE_GET) {
+        for (i = 0; i < GET_CHUNK_CNT(pkt); i++) {
+            GET_HASH(pkt, i, hex);
+            printf("%d %s\n", i, hex);
+        }
+    }
+    
+    printf("\n");
+}

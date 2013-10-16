@@ -44,4 +44,5 @@ clean:
 		$(ODIR)/* $(SRCDIR)/*~ $(IDIR)/*~ $(SRCDIR)/*.orig $(IDIR)/*.orig test/*
 
 test_packet:
-	$(CC) -I$(IDIR) $(TESTDIR)/test_packet.c $(SRCDIR)/chunk.c $(SRCDIR)/sha.c -o test/test_packet
+	$(CC) $(TESTDEFS) -I$(IDIR) $(TESTDIR)/test_packet.c $(SRCDIR)/chunk.c $(SRCDIR)/sha.c $(SRCDIR)/packet.c \
+		$(SRCDIR)/peer_server.c $(SRCDIR)/logger.c $(SRCDIR)/peerlist.c -o test/test_packet
