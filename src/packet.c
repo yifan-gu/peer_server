@@ -156,16 +156,16 @@ void print_packet(packet_t *pkt) {
                || PACKET_TYPE_DENIED == type);
     
     printf("-----------------\n");
-    printf("Magic: %d\t|\n", GET_MAGIC(pkt));
-    printf("Version: %d\t|\n", GET_VERSION(pkt));
-    printf("Type: %d\t\t|\n", GET_TYPE(pkt));
-    printf("Hdr_len: %d\t|\n", GET_HDR_LEN(pkt));
-    printf("Pkt_len: %d\t|\n", GET_PKT_LEN(pkt));
-    printf("Seq: %d\t\t|\n", GET_SEQ(pkt));
-    printf("Ack: %d\t\t|\n", GET_ACK(pkt));
+    printf("| Magic: %d\t|\n", GET_MAGIC(pkt));
+    printf("| Version: %d\t|\n", GET_VERSION(pkt));
+    printf("| Type: %d\t|\n", GET_TYPE(pkt));
+    printf("| Hdr_len: %d\t|\n", GET_HDR_LEN(pkt));
+    printf("| Pkt_len: %d\t|\n", GET_PKT_LEN(pkt));
+    printf("| Seq: %d\t|\n", GET_SEQ(pkt));
+    printf("| Ack: %d\t|\n", GET_ACK(pkt));
 
     if (nondata) {
-        printf("Chunk_cnt: %d\t|\n", GET_CHUNK_CNT(pkt));
+        printf("| Chunk_cnt: %d\t|\n", GET_CHUNK_CNT(pkt));
     }
     printf("-----------------\n");
 
