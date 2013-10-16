@@ -87,13 +87,13 @@ int main(int argc, char *argv[])
     GET_HASH(&pkt_clone, 1, hash_hex);
     assert(strcmp(hash_hex, hash2) == 0);
 
-    printf("testing send_message, will write 3 packets containning 150 hashes...\n");
+    printf("testing send_packet, will write 3 packets containning 150 hashes...\n");
     assert(0 == parse_chunk(&cl, filename));
     
-    send_message(0, NULL, 0, 0, &cl, 0, -1, PACKET_TYPE_WHOHAS, 0, 0, NULL, 0);
+    send_packet(0, NULL, 0, 0, &cl, 0, -1, PACKET_TYPE_WHOHAS, 0, 0, NULL, 0);
     
-    printf("testing send_message(data)\n");
-    send_message(0, NULL, 0, 0, &cl, 0, -1, PACKET_TYPE_DATA, 1, 1, data, strlen(data)+1);
+    printf("testing send_packet(data)\n");
+    send_packet(0, NULL, 0, 0, &cl, 0, -1, PACKET_TYPE_DATA, 1, 1, data, strlen(data)+1);
 
     printf("PASS\n");
 

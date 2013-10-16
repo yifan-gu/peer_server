@@ -133,7 +133,7 @@ typedef struct packet_s {
 } packet_t;
 
 /**
- * send non-data messages to peers
+ * send packets to peers
  * @param socket, the socket fd
  * @param p, the peerlist
  * @param p_index, from which peer to start sending
@@ -147,7 +147,7 @@ typedef struct packet_s {
  * @param data, the payload data
  * @param data_size, the size of the data
  */
-void send_message(int socket, PeerList *p, int p_index, int p_count,
+void send_packet(int socket, PeerList *p, int p_index, int p_count,
                   ChunkList *c, int c_index ,int c_count,
                   uint8_t type, uint32_t seq, uint32_t ack,
                   uint8_t *payload, size_t payload_size);

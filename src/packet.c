@@ -25,7 +25,7 @@ void send_udp(int socket, PeerList *p, int p_index, int p_count, uint8_t *buf, s
 }
 
 /**
- * send non-data messages to peers
+ * send packets to peers
  * @param socket, the socket fd
  * @param p, the peerlist
  * @param p_index, from which peer to start sending
@@ -39,7 +39,7 @@ void send_udp(int socket, PeerList *p, int p_index, int p_count, uint8_t *buf, s
  * @param data, the payload data
  * @param data_size, the size of the payload data
  */
-void send_message(int socket, PeerList *p, int p_index, int p_count,
+void send_packet(int socket, PeerList *p, int p_index, int p_count,
                   ChunkList *c, int c_index ,int c_count,
                   uint8_t type, uint32_t seq, uint32_t ack,
                   uint8_t *payload, size_t payload_size) {
@@ -47,8 +47,15 @@ void send_message(int socket, PeerList *p, int p_index, int p_count,
     int pkt_num = 1;
     int cnt, i, j = 0;
     size_t len;
+    int nondata = 0;
 
     uint8_t buf[PACKET_SIZE];
+
+    nondata = (PACKET_TYPE_WHOHAS == type
+               || PACKET_TYPE_IHAVE == type
+               || PACKET_TYPE_GET == type
+               || PACKET_TYPE_DENIED == type);
+               
 
     /* broadcasts */
     if (p_count < 0) {
@@ -65,9 +72,7 @@ void send_message(int socket, PeerList *p, int p_index, int p_count,
     }
 
     /* compute number of packets needed */
-    if (NULL != c && (PACKET_TYPE_WHOHAS == type
-                      || PACKET_TYPE_IHAVE == type
-                      || PACKET_TYPE_GET == type)) { // types will have chunks
+    if (NULL != c && nondata) { // will have chunks
         pkt_num = (c_count * SHA1_HASH_SIZE + MAX_PAYLOAD_SIZE - 1) / MAX_PAYLOAD_SIZE;
     }
 
@@ -92,11 +97,7 @@ void send_message(int socket, PeerList *p, int p_index, int p_count,
             SET_ACK(&pkt, ack);
         }
 
-        if (NULL != c
-            && (PACKET_TYPE_WHOHAS == type
-                || PACKET_TYPE_IHAVE == type
-                || PACKET_TYPE_GET == type)) { // types will have chunks
-            
+        if (NULL != c && nondata) { // types will have chunks
             
             SET_PKT_LEN(&pkt, GET_PKT_LEN(&pkt) + 4); // 4 bytes for hash count
             
@@ -127,7 +128,7 @@ void send_message(int socket, PeerList *p, int p_index, int p_count,
         #ifdef TESTING
         test_message(buf, i, c);
         #endif
-        
+
         send_udp(socket, p, p_index, p_count, buf, len);
     }
 }
@@ -137,7 +138,15 @@ void send_message(int socket, PeerList *p, int p_index, int p_count,
  */
 void print_packet(packet_t *pkt) {
     int i, type;
+    int nondata;
     char hex[SHA1_HASH_STR_SIZE+1];
+
+    type = GET_TYPE(pkt);
+    
+    nondata = (PACKET_TYPE_WHOHAS == type
+               || PACKET_TYPE_IHAVE == type
+               || PACKET_TYPE_GET == type
+               || PACKET_TYPE_DENIED == type);
     
     printf("-----------------\n");
     printf("Magic: %d\t|\n", GET_MAGIC(pkt));
@@ -148,17 +157,13 @@ void print_packet(packet_t *pkt) {
     printf("Seq: %d\t\t|\n", GET_SEQ(pkt));
     printf("Ack: %d\t\t|\n", GET_ACK(pkt));
 
-    type = GET_TYPE(pkt);
-    if (type == PACKET_TYPE_WHOHAS
-        || type == PACKET_TYPE_IHAVE
-        || type == PACKET_TYPE_GET) {
+    
+    if (nondata) {
         printf("Chunk_cnt: %d\t|\n", GET_CHUNK_CNT(pkt));
     }
     printf("-----------------\n");
 
-    if (type == PACKET_TYPE_WHOHAS
-        || type == PACKET_TYPE_IHAVE
-        || type == PACKET_TYPE_GET) {
+    if (nondata) {
         for (i = 0; i < GET_CHUNK_CNT(pkt); i++) {
             GET_HASH(pkt, i, hex);
             printf("%d %s\n", i, hex);
