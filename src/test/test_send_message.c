@@ -14,6 +14,7 @@ int main(int argc, char *argv[])
     struct sockaddr_in myaddr;
     bt_config_t config;
     char *dummy_data = "hello world";
+    pkt_param_t param;
     
     bt_init(&config, argc, argv);
 
@@ -45,35 +46,35 @@ int main(int argc, char *argv[])
         exit(-1);
     }
 
-    send_packet(sock, &peerlist, 0, -1,
-                &haschunks, 0, -1,
-                PACKET_TYPE_WHOHAS, 0, 0,
-                NULL, 0);
+    PKT_PARAM_CLEAR(&param);
+    param.socket = sock;
+    param.p = &peerlist;
+    param.p_count = -1;
+    param.c = &haschunks;
+    param.c_count = -1;
+    param.seq = 1; // should have no effect on nondata packets
+    param.ack = 1;
+    param.payload = (uint8_t *)dummy_data; // should have no effect on nondata packets
+    param.payload_size = strlen(dummy_data)+1;
     
-    send_packet(sock, &peerlist, 0, -1,
-                &haschunks, 0, -1,
-                PACKET_TYPE_IHAVE, 0, 0,
-                NULL, 0);
+    param.type = PACKET_TYPE_WHOHAS;
+    send_packet(&param);
 
-    send_packet(sock, &peerlist, 0, -1,
-                &haschunks, 0, 1,
-                PACKET_TYPE_GET, 0, 0,
-                NULL, 0);
+    param.type = PACKET_TYPE_IHAVE;
+    send_packet(&param);
 
-    send_packet(sock, &peerlist, 0, -1,
-                &haschunks, 0, -1,
-                PACKET_TYPE_DATA, 1, 1,
-                (uint8_t *)dummy_data, strlen(dummy_data)+1);
+    param.type = PACKET_TYPE_GET;
+    send_packet(&param);
 
-    send_packet(sock, &peerlist, 0, -1,
-                &haschunks, 0, -1,
-                PACKET_TYPE_ACK, 1, 1,
-                (uint8_t *)dummy_data, strlen(dummy_data)+1);
+    param.type = PACKET_TYPE_DATA;
+    
+    send_packet(&param);                
 
-    send_packet(sock, &peerlist, 0, -1,
-                &haschunks, 0, -1,
-                PACKET_TYPE_DENIED, 1, 1,
-                (uint8_t *)dummy_data, strlen(dummy_data)+1);
+    param.type = PACKET_TYPE_ACK;
+    send_packet(&param);
+
+    param.type = PACKET_TYPE_DENIED;
+    send_packet(&param);
     
     return 0;
 }

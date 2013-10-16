@@ -108,6 +108,11 @@ uint8_t hash_bin_buf[SHA1_HASH_SIZE];
     memcpy((pkt)->payload+EXT_HEADER_SIZE(pkt)+4+(n)*SHA1_HASH_SIZE, hash_bin_buf, SHA1_HASH_SIZE)
 
 /**
+ * clear the pkt_param_t struct
+ */
+#define PKT_PARAM_CLEAR(p) (memset(p, 0, sizeof(pkt_param_t)))
+
+/**
  * types of a packet
  */
 enum packet_type {
@@ -134,25 +139,43 @@ typedef struct packet_s {
     uint8_t payload[MAX_PAYLOAD_SIZE]; // either DATA or HASHs
 } packet_t;
 
+typedef struct pkt_param_s {
+    int socket;
+    
+    /**
+     * the peerlist, start index and count
+     */
+    PeerList *p;
+    int p_index;
+    int p_count;
+
+    /**
+     * the chunklist, start index and count
+     */
+    ChunkList *c;
+    int c_index ;
+    int c_count;
+
+    /**
+     * some packet fields
+     */
+    uint8_t type;
+    uint32_t seq;
+    uint32_t ack;
+
+    /**
+     * payload and size
+     */
+    uint8_t *payload;
+    size_t payload_size;
+    
+} pkt_param_t;
+
 /**
  * send packets to peers
- * @param socket, the socket fd
- * @param p, the peerlist
- * @param p_index, from which peer to start sending
- * @param p_count, number of peers to send, -1 means broadcast
- * @param c, the chunklist
- * @param c_index, from which chunk to start copying hash
- * @param c_count, number of chunks in the list I will send, -1 means all
- * @param type, packet type
- * @param seq, seq number
- * @param ack, ack number
- * @param data, the payload data
- * @param data_size, the size of the data
+ * @param pp, a pointer to pkt_param_t struct
  */
-void send_packet(int socket, PeerList *p, int p_index, int p_count,
-                  ChunkList *c, int c_index ,int c_count,
-                  uint8_t type, uint32_t seq, uint32_t ack,
-                  uint8_t *payload, size_t payload_size);
+void send_packet(pkt_param_t *pp);
 
 /**
  * a helper for debugging
