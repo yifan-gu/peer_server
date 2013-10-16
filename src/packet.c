@@ -160,7 +160,6 @@ void print_packet(packet_t *pkt) {
     printf("Seq: %d\t\t|\n", GET_SEQ(pkt));
     printf("Ack: %d\t\t|\n", GET_ACK(pkt));
 
-    
     if (nondata) {
         printf("Chunk_cnt: %d\t|\n", GET_CHUNK_CNT(pkt));
     }
@@ -176,7 +175,6 @@ void print_packet(packet_t *pkt) {
             printf("payload: %s\n", GET_PAYLOAD(pkt));
         }
     }
-    
     
     printf("\n");
 }
