@@ -1,3 +1,7 @@
+/*
+ * A simple implementation for packet I/O
+ * @author: Yifan Gu <yifang@cs.cmu.edu>
+ */
 #ifndef _PACKET_H_
 #define _PACKET_H_
 
@@ -6,23 +10,35 @@
 
 #include "sha.h"
 #include "logger.h"
+#include "peer_server.h"
+#include "chunk.h"
 
 /**
  * The hashcode in binary
  */
-char hash_bin_buf[SHA1_HASH_SIZE];
+uint8_t hash_bin_buf[SHA1_HASH_SIZE];
 
 #define MAGIC 15441
 #define VERSION 1
 #define HEADER_SIZE 16
-#define EXT_HEADER_SIZE(pkt) (HEADER_SIZE - (pkt)->hdr_len)
 #define PACKET_SIZE 1500 // udp packet size
-#define MAX_PAYLOAD_SIZE (PACKET_SIZE - HEADER_SIZE)
 
+#define MIN(a, b) ((a) < (b) ? (a) : (b))
+/**
+ * the max hash number in a packet
+ */
+#define HASH_NUM_PKT ((MAX_PAYLOAD_SIZE - 4) / SHA1_HASH_SIZE)
+
+/**
+ * to be compatible with other implementations
+ */
+#define EXT_HEADER_SIZE(pkt) (HEADER_SIZE - (pkt)->hdr_len)
+#define MAX_PAYLOAD_SIZE (PACKET_SIZE - HEADER_SIZE)
 /**
  * Decode / Encode packet from / to buffer
  * @param buf, the raw buf recvfrom peers, it's uint8_t*
  * @param pkt, a pointer to a packet_t struct
+ * @return ENCODE_PKT return the size of the packet
  */
 #define DECODE_PKT(buf, pkt, size)              \
     memcpy((pkt), (buf), (size));               \
@@ -32,13 +48,15 @@ char hash_bin_buf[SHA1_HASH_SIZE];
     (pkt)->seq = ntohl((pkt)->seq);             \
     (pkt)->ack = ntohl((pkt)->ack)
 
-#define ENCODE_PKT(buf, pkt, size)                 \
-    (pkt)->magic = htons((pkt)->magic);            \
-    (pkt)->hdr_len = htons((pkt)->hdr_len);        \
-    (pkt)->pkt_len = htons((pkt)->pkt_len);        \
-    (pkt)->seq = htonl((pkt)->seq);                \
-    (pkt)->ack = htonl((pkt)->ack);                \
-    memcpy((buf), (pkt), (size))
+#define ENCODE_PKT(buf, pkt, size)                      \
+    size_t s = size; /* avoid evaluation after hton */  \
+    (pkt)->magic = htons((pkt)->magic);                 \
+    (pkt)->hdr_len = htons((pkt)->hdr_len);             \
+    (pkt)->pkt_len = htons((pkt)->pkt_len);             \
+    (pkt)->seq = htonl((pkt)->seq);                     \
+    (pkt)->ack = htonl((pkt)->ack);                     \
+    memcpy((buf), (pkt), s);                            
+         
 
 /**
  * a couple of macros to make life easier
@@ -64,7 +82,8 @@ char hash_bin_buf[SHA1_HASH_SIZE];
 #define GET_ACK(pkt) ((pkt)->ack)
 #define SET_ACK(pkt, v) ((pkt)->ack = (v))
 
-#define GET_PAYLOAD(pkt) ((pkt)->payload(0+EXT_HEADER_SIZE(pkt)))
+#define GET_PAYLOAD_LEN(pkt) ((pkt)->pkt_len - (pkt)->hdr_len)
+#define GET_PAYLOAD(pkt) ((pkt)->payload + EXT_HEADER_SIZE(pkt))
 
 /**
  * Get / Set chunk numbers, EXT_HEADER_SIZE is reserved for other implementations
@@ -85,9 +104,8 @@ char hash_bin_buf[SHA1_HASH_SIZE];
     binary2hex(((pkt)->payload+EXT_HEADER_SIZE(pkt)+4+(n)*SHA1_HASH_SIZE), SHA1_HASH_SIZE, (hexbuf))
 
 #define SET_HASH(pkt, n, hash)                                          \
-    hex2binary((hash), SHA1_HASH_SIZE*2, hash_bin_buf);                 \
+    hex2binary((hash), SHA1_HASH_STR_SIZE, hash_bin_buf);               \
     memcpy((pkt)->payload+EXT_HEADER_SIZE(pkt)+4+(n)*SHA1_HASH_SIZE, hash_bin_buf, SHA1_HASH_SIZE)
-
 
 /**
  * types of a packet
@@ -116,42 +134,29 @@ typedef struct packet_s {
     uint8_t payload[MAX_PAYLOAD_SIZE]; // either DATA or HASHs
 } packet_t;
 
+/**
+ * send packets to peers
+ * @param socket, the socket fd
+ * @param p, the peerlist
+ * @param p_index, from which peer to start sending
+ * @param p_count, number of peers to send, -1 means broadcast
+ * @param c, the chunklist
+ * @param c_index, from which chunk to start copying hash
+ * @param c_count, number of chunks in the list I will send, -1 means all
+ * @param type, packet type
+ * @param seq, seq number
+ * @param ack, ack number
+ * @param data, the payload data
+ * @param data_size, the size of the data
+ */
+void send_packet(int socket, PeerList *p, int p_index, int p_count,
+                  ChunkList *c, int c_index ,int c_count,
+                  uint8_t type, uint32_t seq, uint32_t ack,
+                  uint8_t *payload, size_t payload_size);
 
 /**
- * make a packet into buffer
- * @param ... to be determined
+ * a helper for debugging
  */
-//void write_packet(packet_t *pkt, uint8_t *buf,
-//                  uint8_t type, uint32_t seq, uint32_t ack,
-//                  list *chunk, uint8_t *data, size_t data_size) {
-//    pkt->magic = MAGIC;
-//    pkt->version = VERSION;
-//    pkt->type = type;
-//    pkt->hdr_len = HEADER_SIZE;
-//    pkt->seq = 0;
-//    pkt->ack = 0;
-//
-//    if (PACKET_TYPE_DATA == pkt->type) {
-//        pkt->seq = seq;
-//    }
-//
-//    if (PACKET_TYPE_ACK == pkt->ack) {
-//        pkt->ack = ack;
-//    }
-//
-//    if (NULL != chunk) {
-//        //TODO: iterate on chunk to add chunk hash, and compute pkt_len;
-//    } else if (NULL != data) {
-//        if (data_size > MAX_PAYLOAD_SIZE) {
-//            logger(LOG_ERROR, "data size too big %l", data_size);
-//            return;
-//        }
-//        
-//        memcpy(pkt->payload, data, data_size);
-//    }
-//
-//    ENCODE_PKT(buf, pkt, pkt->pkt_len);
-//}
-
+void print_packet(packet_t *pkt);
 
 #endif
