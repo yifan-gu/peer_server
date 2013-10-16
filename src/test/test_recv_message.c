@@ -45,6 +45,8 @@ int main(int argc, char *argv[])
         exit(-1);
     }
 
+    printf("listening...\n");
+    
     while (1) {
         int nfds;
         int ret;

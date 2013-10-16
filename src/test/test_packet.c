@@ -39,6 +39,7 @@ void check_pkt_header(packet_t *pkt, uint8_t type,
 int main(int argc, char *argv[])
 {
     packet_t pkt, pkt_clone;
+    pkt_param_t param;
     char buf[PACKET_SIZE*10];
     char *hash1 = "68938c599df8d02feddde5671a94322b942f0f91";
     char *hash2 = "00c5cbdea37da7925250cc9bbcfcbcc4c28ef915";
@@ -88,11 +89,24 @@ int main(int argc, char *argv[])
 
     printf("testing send_packet, will write 3 packets containning 150 hashes...\n");
     assert(0 == parse_chunk(&cl, filename));
-    
-    send_packet(0, NULL, 0, 0, &cl, 0, -1, PACKET_TYPE_WHOHAS, 0, 0, NULL, 0);
+
+    PKT_PARAM_CLEAR(&param);
+    param.c = &cl;
+    param.c_count = -1;
+    param.type = PACKET_TYPE_WHOHAS;
+    send_packet(&param);
     
     printf("testing send_packet(data)\n");
-    send_packet(0, NULL, 0, 0, &cl, 0, -1, PACKET_TYPE_DATA, 1, 1, (uint8_t *)data, strlen(data)+1);
+
+    PKT_PARAM_CLEAR(&param);
+    param.c = &cl;
+    param.c_count = -1;
+    param.type = PACKET_TYPE_DATA;
+    param.seq = 1;
+    param.ack = 1;
+    param.payload = (uint8_t *)data;
+    param.payload_size = strlen(data)+1;
+    send_packet(&param);
 
     printf("PASS\n");
 

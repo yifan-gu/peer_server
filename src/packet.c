@@ -29,23 +29,27 @@ void send_udp(int socket, PeerList *p, int p_index, int p_count, uint8_t *buf, s
 
 /**
  * send packets to peers
- * @param socket, the socket fd
- * @param p, the peerlist
- * @param p_index, from which peer to start sending
- * @param p_count, number of peers to send, -1 means broadcast
- * @param c, the chunklist
- * @param c_index, from which chunk to start copying hash
- * @param c_count, number of chunks in the list I will send, -1 means all
- * @param type, packet type
- * @param seq, seq number
- * @param ack, ack number
- * @param data, the payload data
- * @param data_size, the size of the payload data
+ * @param pp, a pointer to pkt_param_t struct
  */
-void send_packet(int socket, PeerList *p, int p_index, int p_count,
-                  ChunkList *c, int c_index ,int c_count,
-                  uint8_t type, uint32_t seq, uint32_t ack,
-                  uint8_t *payload, size_t payload_size) {
+void send_packet(pkt_param_t *pp) {
+    /* passing argumemts */
+    int socket = pp->socket;
+    PeerList *p = pp->p;
+    int p_index = pp->p_index;
+    int p_count = pp->p_count;
+
+    ChunkList *c = pp->c;
+    int c_index = pp->c_index;
+    int c_count = pp->c_count;
+
+    uint8_t type = pp->type;
+    uint32_t seq = pp->seq;
+    uint32_t ack = pp->ack;
+
+    uint8_t *payload = pp->payload;;
+    size_t payload_size = pp->payload_size;
+
+    
     packet_t pkt;
     int pkt_num = 1;
     int cnt, i, j = 0;
