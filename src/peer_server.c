@@ -9,6 +9,7 @@
 PeerList peerlist;
 FILE *master_chunk;
 ChunkList haschunks;
+ChunkList getchunks;
 int max_conn;
 
 char *readString(FILE *fp)
