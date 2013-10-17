@@ -13,7 +13,7 @@ typedef struct _Peer {
 
 typedef struct _PeerList {
   int count;
-  Peer arr[MAX_PEER_NUM];
+  Peer peers[MAX_PEER_NUM];
 }PeerList;
 
 int init_peerlist(PeerList *, bt_peer_t *, int);

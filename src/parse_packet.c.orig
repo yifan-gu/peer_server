@@ -1,7 +1,6 @@
 #include <parse_packet.h>
 
 extern ChunkList ihavechunks;
-extern ChunkList haschunks;
 extern PeerList peerlist;
 extern int sock;
 
@@ -31,23 +30,18 @@ int parse_packet(packet_t *pkt, struct sockaddr_in peer_addr) {
 }
 
 static void parse_ihavechunks(packet_t *pkt, struct sockaddr_in peer_addr) {
-    int i, j, k, count;
+    int i, count;
     char *hexbuf;
     pkt_param_t param;
 
     count = GET_CHUNK_CNT(pkt);
 
-    for (i = 0, k = 0; i < count; i++) {
-        hexbuf = ihavechunks.chunks[k].sha1;
+    for (i = 0; i < count; i++) {
+        hexbuf = ihavechunks.chunks[i].sha1;
         GET_HASH(pkt, i, hexbuf);
-        for (j = 0; j < haschunks.count; j++) {
-            if(strcmp(hexbuf, haschunks.chunks[j].sha1) == 0){
-                k ++ ;
-            }
-        }
     }
 
-    ihavechunks.count = k;
+    ihavechunks.count = count;
 
     PKT_PARAM_CLEAR(&param);
     param.socket = sock;
@@ -55,13 +49,12 @@ static void parse_ihavechunks(packet_t *pkt, struct sockaddr_in peer_addr) {
     param.c_count = -1;
 
     param.p = &peerlist;
-    param.p_count = -1;
+    param.p_count = 1;
     for (i = 0; i < peerlist.count; i++) {
-        if(peerlist.peers[i].addr.sin_port == peer_addr.sin_port
-                && peerlist.peers[i].addr.sin_addr.s_addr == peer_addr.sin_addr.s_addr
+        if(peerlist.arr[i].addr.sin_port == peer_addr.sin_port
+          && peerlist.arr[i].addr.sin_addr.s_addr == peer_addr.sin_addr.s_addr
           ) {
             param.p_index = i;
-            param.p_count = 1;
             break;
         }
     }

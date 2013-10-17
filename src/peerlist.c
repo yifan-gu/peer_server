@@ -10,7 +10,7 @@ int init_peerlist(PeerList *pl, bt_peer_t *peers, int selfid) {
     for (p = peers; p != NULL; p = p->next) {
         if(p->id == selfid)
             continue;
-        pl->arr[i].addr = p->addr;
+        pl->peers[i].addr = p->addr;
         i ++;
     }
     pl->count = i;
