@@ -1,4 +1,5 @@
 #include <parse_packet.h>
+#include <peerlist.h>
 
 extern ChunkList ihavechunks;
 extern ChunkList haschunks;
@@ -43,6 +44,7 @@ static void parse_ihavechunks(packet_t *pkt, struct sockaddr_in peer_addr) {
         for (j = 0; j < haschunks.count; j++) {
             if(strcmp(hexbuf, haschunks.chunks[j].sha1) == 0){
                 k ++ ;
+                break;
             }
         }
     }
@@ -55,16 +57,8 @@ static void parse_ihavechunks(packet_t *pkt, struct sockaddr_in peer_addr) {
     param.c_count = -1;
 
     param.p = &peerlist;
-    param.p_count = -1;
-    for (i = 0; i < peerlist.count; i++) {
-        if(peerlist.peers[i].addr.sin_port == peer_addr.sin_port
-                && peerlist.peers[i].addr.sin_addr.s_addr == peer_addr.sin_addr.s_addr
-          ) {
-            param.p_index = i;
-            param.p_count = 1;
-            break;
-        }
-    }
+    param.p_index = addr2Index(&peerlist, peer_addr);
+    param.p_count = param.p_index == -1? -1: 1;
 
 
     param.type = PACKET_TYPE_IHAVE;

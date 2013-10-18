@@ -17,5 +17,6 @@ typedef struct _PeerList {
 }PeerList;
 
 int init_peerlist(PeerList *, bt_peer_t *, int);
+int addr2Index(PeerList *pl, struct sockaddr_in addr);
 
 #endif // for #ifndef _PEERLIST_H
