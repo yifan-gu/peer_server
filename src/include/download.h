@@ -14,6 +14,6 @@ typedef struct _Download {
 
 int init_download(Download *dl);
 
-int find_unfetched_chunk(struct sockaddr_in peer_addr);
+int find_unfetched_chunk(int);
 
 #endif // for #ifndef _DOWNLOAD_H

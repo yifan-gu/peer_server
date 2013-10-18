@@ -12,14 +12,12 @@ int init_download(Download *dl) {
     return 0;
 }
 
-int find_unfetched_chunk(struct sockaddr_in peer_addr) {
+int find_unfetched_chunk(int p_index) {
     int i;
-    int p_index;
     Download *dl;
     ll_Node *iter;
     ChunkLine *cl;
 
-    p_index = addr2Index(peer_addr);
     if(p_index < 0) {
         return -1;
     }

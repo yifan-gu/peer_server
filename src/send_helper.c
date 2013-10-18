@@ -9,7 +9,7 @@ extern ChunkList getchunks;
 extern PeerList peerlist;
 extern int sock;
 
-void parse_ihavechunks(packet_t *pkt, struct sockaddr_in peer_addr) {
+void parse_ihavechunks(packet_t *pkt, int p_index) {
     int i, j, k, count;
     char *hexbuf;
     pkt_param_t param;
@@ -39,7 +39,7 @@ void parse_ihavechunks(packet_t *pkt, struct sockaddr_in peer_addr) {
     param.c_count = -1;
 
     param.p = &peerlist;
-    param.p_index = addr2Index(peer_addr);
+    param.p_index = p_index;
     param.p_count = param.p_index == -1? -1: 1;
 
 
@@ -47,9 +47,8 @@ void parse_ihavechunks(packet_t *pkt, struct sockaddr_in peer_addr) {
     send_packet(&param);
 }
 
-int parse_download(packet_t *pkt, struct sockaddr_in peer_addr){
+int parse_download(packet_t *pkt, int p_index){
     int i, count;
-    int p_index;
     int fail_flag = 0;
 
     char *hexbuf;
@@ -57,11 +56,6 @@ int parse_download(packet_t *pkt, struct sockaddr_in peer_addr){
     Download *dl;
     ChunkLine *cl;
     ll_Node *node;
-
-    p_index = addr2Index(peer_addr);
-    if(p_index < 0){
-        return -1;
-    }
 
     dl = & peerlist.peers[p_index].dl;
 
@@ -97,7 +91,7 @@ int parse_download(packet_t *pkt, struct sockaddr_in peer_addr){
     return 0;
 }
 
-int send_get(struct sockaddr_in peer_addr, int getIndex){
+int send_get(int p_index, int getIndex){
     pkt_param_t param;
 
     getchunks.chunks[getIndex].state = fetching;
@@ -111,7 +105,7 @@ int send_get(struct sockaddr_in peer_addr, int getIndex){
     param.c_count = 1;
 
     param.p = &peerlist;
-    param.p_index = addr2Index(peer_addr);
+    param.p_index = p_index;
     param.p_count = 1;
 
     param.type = PACKET_TYPE_GET;
