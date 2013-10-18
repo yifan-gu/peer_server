@@ -28,6 +28,18 @@ void init_linkedlist(Linlist *ll){
     ll->count = 0;
 }
 
+void ll_delete_allnodes(Linlist *ll, void (*del_item)(void *)){
+    ll_Node *next;
+    ll_Node *head = & ll->head;
+    ll_Node *iter = head->next;
+    while(iter != head) {
+        next = iter->next;
+        del_item(iter->item);
+        free(iter);
+        iter = next;
+    }
+    ll->count = 0;
+}
 
 int ll_count(Linlist *ll) {
     return ll->count;

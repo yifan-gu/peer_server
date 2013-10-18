@@ -3,6 +3,7 @@
 
 #include <packet.h>
 #include <sys/socket.h>
+#include <arpa/inet.h>
 #include <netinet/in.h>
 
 int parse_packet(packet_t *, struct sockaddr_in);

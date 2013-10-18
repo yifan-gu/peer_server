@@ -2,7 +2,6 @@
 #define _PEER_SERVER_H
 
 #include <bt_parse.h>
-#include <peerlist.h>
 #include <sha.h>
 
 #define MAX_CHUNK_NUM 1024
@@ -25,5 +24,10 @@ typedef struct _ChunkList {
 
 int peer_init(bt_config_t *config);
 int parse_chunk(ChunkList *, char *);
+
+ChunkLine* new_chunkline();
+void delete_chunkline(void *cl);
+
+int addr2Index(struct sockaddr_in addr);
 
 #endif // for #ifndef _PEER_SERVER_H
