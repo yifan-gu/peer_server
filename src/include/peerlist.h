@@ -4,16 +4,13 @@
 #include <bt_parse.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <peer.h>
 
 #define MAX_PEER_NUM BT_MAX_PEERS
 
-typedef struct _Peer {
-  struct sockaddr_in addr;
-} Peer;
-
 typedef struct _PeerList {
   int count;
-  Peer arr[MAX_PEER_NUM];
+  Peer peers[MAX_PEER_NUM];
 }PeerList;
 
 int init_peerlist(PeerList *, bt_peer_t *, int);

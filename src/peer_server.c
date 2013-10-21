@@ -1,6 +1,7 @@
 #include <peer_server.h>
 #include <stdio.h>
 #include <malloc.h>
+#include <peerlist.h>
 
 #include <logger.h>
 
@@ -73,7 +74,7 @@ int peer_init(bt_config_t *config) {
 
 /*
 Assumtpion:
-  We have a maximum chunk number limit. Lines larger than that will not be parsed.
+  We have a maximum chunk number limit. Lines larger than that will be discarded.
  */
 int parse_chunk(ChunkList *cl, char *chunk_list_file) {
     FILE *tmp_fp;
@@ -98,4 +99,26 @@ int parse_chunk(ChunkList *cl, char *chunk_list_file) {
     fclose(tmp_fp);
 
     return 0;
+}
+
+ChunkLine* new_chunkline(){
+    return malloc(sizeof(ChunkLine));
+}
+
+void delete_chunkline(void *cl){
+    free(cl);
+}
+
+int addr2Index(struct sockaddr_in addr){
+    int i;
+    PeerList *pl = &peerlist;
+
+    for (i = 0; i < pl->count; i++) {
+        if(pl->peers[i].addr.sin_port == addr.sin_port
+                && pl->peers[i].addr.sin_addr.s_addr == addr.sin_addr.s_addr
+          ) {
+          return i;
+        }
+    }
+    return -1;
 }

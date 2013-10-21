@@ -1,7 +1,6 @@
 #include <peerlist.h>
 #include <string.h>
 
-
 int init_peerlist(PeerList *pl, bt_peer_t *peers, int selfid) {
     bt_peer_t *p;
     int i = 0;
@@ -10,10 +9,15 @@ int init_peerlist(PeerList *pl, bt_peer_t *peers, int selfid) {
     for (p = peers; p != NULL; p = p->next) {
         if(p->id == selfid)
             continue;
-        pl->arr[i].addr = p->addr;
+
+        // init peer
+        pl->peers[i].addr = p->addr;
+        init_download(& pl->peers[i].dl);
+
         i ++;
     }
     pl->count = i;
 
     return 0;
 }
+
