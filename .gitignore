@@ -15,8 +15,3 @@
 # Executables
 *.exe
 *.app
-
-test/
-tmp/*.tar
-peer
-make-chunks
