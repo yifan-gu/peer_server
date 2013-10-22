@@ -113,3 +113,21 @@ int send_get(int p_index, int getIndex){
 
     return 0;
 }
+
+int send_ack(int p_index, int ack) {
+    pkt_param_t param;
+
+    PKT_PARAM_CLEAR(&param);
+
+    param.socket = sock;
+    param.p = &peerlist;
+    param.p_index = p_index;
+    param.p_count = 1;
+    param.ack = ack;
+    param.type = PACKET_TYPE_ACK;
+    
+    send_packet(&param);
+
+    return 0;
+    
+}

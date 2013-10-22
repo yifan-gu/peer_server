@@ -35,6 +35,7 @@ uint8_t hash_bin_buf[SHA1_HASH_SIZE];
  */
 #define EXT_HEADER_SIZE(pkt) (HEADER_SIZE - (pkt)->hdr_len)
 #define MAX_PAYLOAD_SIZE (PACKET_SIZE - HEADER_SIZE)
+#define PAYLOAD_SIZE 1000
 /**
  * Decode / Encode packet from / to buffer
  * @param buf, the raw buf recvfrom peers, it's uint8_t*
@@ -183,4 +184,4 @@ void send_packet(pkt_param_t *pp);
  */
 void print_packet(packet_t *pkt);
 
-#endif
+#endif /* _PACKET_H_ */
