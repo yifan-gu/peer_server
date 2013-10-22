@@ -29,12 +29,13 @@
 
 extern ChunkList getchunks;
 extern PeerList peerlist;
+
 int sock;
+bt_config_t config;
 
 void peer_run(bt_config_t *config);
 
 int main(int argc, char **argv) {
-    bt_config_t config;
 
     bt_init(&config, argc, argv);
 

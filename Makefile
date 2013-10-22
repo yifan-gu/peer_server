@@ -12,23 +12,24 @@ TESTDEFS	= -DTESTING			# comment this out to disable debugging code
 
 _HEADERS = bt_parse.h  chunk.h  debug.h  debug-text.h  input_buffer.h  sha.h  spiffy.h \
 		   logger.h  packet.h peer_server.h peerlist.h download.h upload.h linkedlist.h \
-		   parse_packet.h peer.h send_helper.h
+		   parse_packet.h peer.h send_helper.h tcp.h
 HEADERS = $(patsubst %,$(IDIR)/%,$(_HEADERS))
 
 _OBJS = peer.o bt_parse.o spiffy.o debug.o input_buffer.o chunk.o sha.o \
 		logger.o peer_server.o peerlist.o download.o upload.o linkedlist.o packet.o \
-		parse_packet.o send_helper.o
+		parse_packet.o send_helper.o tcp.o
 OBJS = $(patsubst %,$(ODIR)/%,$(_OBJS))
 
 _MK_CHUNK_OBJS   = make_chunks.o chunk.o sha.o
 MK_CHUNK_OBJS = $(patsubst %,$(ODIR)/%,$(_MK_CHUNK_OBJS))
 
-_TEST_OBJS   = logger.o peer_server.o peerlist.o chunk.o sha.o packet.o linkedlist.o bt_parse.o debug.o
+_TEST_OBJS   = logger.o peer_server.o peerlist.o chunk.o sha.o packet.o linkedlist.o \
+		bt_parse.o debug.o download.o
 TEST_OBJS = $(patsubst %,$(ODIR)/%,$(_TEST_OBJS))
 
 BINS = peer make-chunks
 
-TESTBINS = test_packet test_send_message test_recv_message
+TESTBINS = test_packet test_send_message test_recv_message test_send_corrupt test_tcp_send
 
 # Explit build and testing targets
 all: ${BINS}
@@ -60,3 +61,9 @@ test_send_message: $(TEST_OBJS) $(TESTDIR)/test_send_message.o
 
 test_recv_message: $(TEST_OBJS) $(TESTDIR)/test_recv_message.o
 	$(CC) -DDEBUG $(TEST_OBJS) $(TESTDIR)/test_recv_message.o -o $(TESTBINDIR)/test_recv_message $(LDFLAGS)
+
+test_send_corrupt: $(TEST_OBJS) $(TESTDIR)/test_send_corrupt.o
+	$(CC) -DDEBUG $(TEST_OBJS) $(TESTDIR)/test_send_corrupt.o -o $(TESTBINDIR)/test_send_corrupt $(LDFLAGS)
+
+test_tcp_send: $(TEST_OBJS) $(TESTDIR)/test_tcp_send.o $(ODIR)/tcp.o
+	$(CC) -DDEBUG $(TEST_OBJS) $(TESTDIR)/test_tcp_send.o $(ODIR)/tcp.o -o $(TESTBINDIR)/test_tcp_send $(LDFLAGS)
