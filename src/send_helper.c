@@ -61,6 +61,7 @@ int parse_download(packet_t *pkt, int p_index){
 
     if(ll_count(& dl->queue) != 0){
         ll_delete_allnodes(&dl->queue, delete_chunkline);
+        init_linkedlist(& dl->queue);
     }
 
     count = GET_CHUNK_CNT(pkt);
