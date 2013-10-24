@@ -1,0 +1,13 @@
+For implementation:
+We use array in our system to represent peers and chunks, this will make the
+code reliable and easy to implement, however it also increase the memory consumption...
+Also, it's slower than hashmap
+
+Besides, in our control flow, we are planning to receive one packet at a time,
+so actually, the ACK is not very accumulative. This will cause some problem if
+the re-ordering is very frequent.
+ 
+For testing:
+More system tests are needed.
+
+

@@ -84,6 +84,10 @@ void process_inbound_udp(int sock) {
 
     DECODE_PKT(buf, &pkt, ret);
     print_packet(&pkt);
+    if (!valid_packet(&pkt)) {
+        fprintf(stderr, "Invalid packet received!\n");
+        return;
+    }
 
     parse_packet(&pkt, from);
 }
@@ -122,7 +126,6 @@ void handle_user_input(char *line, void *cbdata) {
         }
     }
 }
-
 
 void peer_run(bt_config_t *config) {
     struct sockaddr_in myaddr;

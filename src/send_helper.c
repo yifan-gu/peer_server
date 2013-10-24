@@ -114,6 +114,11 @@ int send_get(int p_index, int getIndex){
     return 0;
 }
 
+/**
+ * send an ack packet to peer[p_index]
+ * @param p_index, the index of the pper
+ * @param ack, the ack number
+ */
 int send_ack(int p_index, int ack) {
     pkt_param_t param;
 
@@ -130,4 +135,17 @@ int send_ack(int p_index, int ack) {
 
     return 0;
     
+}
+
+/**
+ * parse the ack packet from peer[p_index]
+ * @param pkt, the packet
+ * @param p_index, the peer index
+ */
+int parse_ack(packet_t *pkt, int p_index) {
+    uint32_t ack = GET_ACK(pkt);
+    printf("ack: %d\n", ack);
+
+    //tcp_handle_ack(tcp, ack);
+    return 0;
 }

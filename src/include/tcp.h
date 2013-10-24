@@ -3,6 +3,7 @@
 
 #include "packet.h"
 
+#define MAX(a, b) ((a) > (b) ? (a) : (b))
 /**
  * the max receiver's window size
  */
@@ -12,12 +13,14 @@
  * the slow-start threshold size
  */
 #define SS_THRESH 64
-
+#define MAX_DUP_ACK 3
+#define DEFAULT_TIMEOUT 5000
 /**
  * return the offset(bytes) of the chunk in the original file
  * @param c_index, the chunk index in the "chunklist"
  */
 #define GET_OFFSET(c_index, chunklist) (chunklist.chunks[(c_index)].id * BT_CHUNK_SIZE)
+#define GET_RTO(tcp) ((tcp)->rtt + 4 * (tcp)->dev)
 
 enum tcp_status {
     TCP_STATUS_SLOW_START,
@@ -27,6 +30,12 @@ enum tcp_status {
 };
 
 typedef struct tcp_send_s {
+
+    /**
+     * if stop flag == 1, then wait
+     * if stop flag == 0, then send
+     */
+    int stop_flag;
 
     /**
      * the index of the peer I am communicating with
@@ -46,11 +55,21 @@ typedef struct tcp_send_s {
      * round-trip time, in millisecond
      */
     uint32_t rtt;
+    /**
+     * deviation for computing rto
+     */
+    uint32_t dev;
     
     /**
      * parameters for the sender
      */
     uint32_t last_pkt_acked;
+
+    /**
+     * variables for handling loss
+     */
+    int timeout_cnt;
+    int dup_ack_cnt;
     //uint32_t last_pkt_sent;
     
     /**
@@ -107,5 +126,22 @@ int init_tcp_send(tcp_send_t *tcp, int p_index, int c_index);
  * deinit the tcp_send_t struct
  */
 int deinit_tcp_send(tcp_send_t *tcp);
+
+/**
+ * handle the ack
+ */
+void tcp_handle_ack(tcp_send_t *tcp, uint32_t ack);
+
+/**
+ * check if one tcp send connection is timeout
+ * @return the number of the continuous timouts
+ */
+int check_send_timeout(tcp_send_t *tcp);
+
+/**
+ * a handy helper...
+ */
+void dump_tcp_send(tcp_send_t *tcp);
+
 
 #endif /* _TCP_H_ */

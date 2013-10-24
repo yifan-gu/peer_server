@@ -141,6 +141,27 @@ void send_packet(pkt_param_t *pp) {
 }
 
 /**
+ * check if a packet is valid
+ * @param pkt,
+ * @return 1 if valid, 0 if not
+ */
+int valid_packet(packet_t *pkt) {
+    if (GET_MAGIC(pkt) != MAGIC) {
+        return 0;
+    }
+
+    if (GET_VERSION(pkt) != VERSION) {
+        return 0;
+    }
+
+    if (GET_TYPE(pkt) > PACKET_TYPE_DENIED) {
+        return 0;
+    }
+
+    return 1;
+}
+
+/**
  * a helper for debugging
  */
 void print_packet(packet_t *pkt) {

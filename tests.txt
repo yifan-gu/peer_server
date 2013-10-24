@@ -1,0 +1,23 @@
+tests for cp1:
+
+For cp1, we first did some unit test on packet sending and receiving, to Make
+the test bins:
+
+$ Make test
+
+then you can run:
+$ ./test/test_recv_message [params same as 'peer']
+to listen on the port
+
+and then, run these commands in another terminal:
+$ ./test/test_send_message [params same as 'peer']
+or
+$ ./test/test_tcp_send [params]
+or
+$ ./test/test_send_corrupt [params]
+
+now you can see the result from the first terminal, if the transportation is
+successful.
+
+For system test, we have not written scripts for that yet, but we have tested
+with peers implemented by other classmates, and validated the result.

@@ -180,6 +180,13 @@ typedef struct pkt_param_s {
 void send_packet(pkt_param_t *pp);
 
 /**
+ * check if a packet is valid
+ * @param pkt,
+ * @return 1 if valid, 0 if not
+ */
+int valid_packet(packet_t *pkt);
+
+/**
  * a helper for debugging
  */
 void print_packet(packet_t *pkt);
