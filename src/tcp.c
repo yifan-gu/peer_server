@@ -134,7 +134,6 @@ int deinit_tcp_send(tcp_send_t *tcp) {
  * tcp send loss, either timeout or dup-ack
  */
 static void tcp_send_loss(tcp_send_t *tcp) {
-    tcp->dup_ack_cnt = 0;
     /*switch (tcp->status) {
         
     case TCP_STATUS_CONGESTION_AVOIDANCE:
@@ -200,12 +199,14 @@ void tcp_handle_ack(tcp_send_t *tcp, uint32_t ack) {
     
     if (ack == tcp->last_pkt_acked) { // duplicated ack
         if (++tcp->dup_ack_cnt >= MAX_DUP_ACK) {
+            tcp->dup_ack_cnt = 0; // clear the dup_ack_cnt
             tcp_send_loss(tcp);
         }
     } else {
         tcp->last_pkt_acked = ack;
         tcp->stop_flag = 0; // now should be able to send
         tcp->timeout_cnt = 0; // clear continuos timeouts
+        tcp->dup_ack_cnt = 0;
         
         switch (tcp->status) { // increasing ack
         case TCP_STATUS_SLOW_START:
