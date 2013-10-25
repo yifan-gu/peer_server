@@ -193,7 +193,7 @@ void tcp_handle_ack(tcp_send_t *tcp, uint32_t ack) {
     }
 
     if (ack > tcp->last_pkt_acked) { // update last_ack and window size
-        switch (tcp->status) { 
+        switch (tcp->status) {
         case TCP_STATUS_SLOW_START:
             tcp->window_size += ack - tcp->last_pkt_acked;
             if (tcp->window_size > tcp->ss_threshold) {
@@ -209,7 +209,7 @@ void tcp_handle_ack(tcp_send_t *tcp, uint32_t ack) {
             if (ack >= tcp->max_pkt_sent) { // FR finished
                 tcp->status = TCP_STATUS_SLOW_START;
             } else {
-                tcp->window_size += 1;
+                tcp->window_size++;
             }
             
             tcp->last_pkt_sent = ack; // do not retransmit those already received packets
