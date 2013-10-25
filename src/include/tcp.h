@@ -31,6 +31,8 @@ enum tcp_status {
 
 typedef struct tcp_send_s {
 
+    int ack_cnt[BT_CHUNK_SIZE / 1024 + 1];
+
     /**
      * if stop flag == 1, then wait
      * if stop flag == 0, then send
@@ -69,7 +71,6 @@ typedef struct tcp_send_s {
      * variables for handling loss
      */
     int timeout_cnt;
-    int dup_ack_cnt;
     //uint32_t last_pkt_sent;
     
     /**

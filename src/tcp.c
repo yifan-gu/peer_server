@@ -183,43 +183,40 @@ static void update_rtt(tcp_send_t *tcp) {
  * handle the ack
  */
 void tcp_handle_ack(tcp_send_t *tcp, uint32_t ack) {
-    if (0 == ack
-        || ack < tcp->last_pkt_acked
-        || ack > (tcp->last_pkt_acked + tcp->window_size)) { // invalid ack
+    if ((0 == ack) || (ack > (tcp->last_pkt_acked + tcp->window_size))) { // invalid ack
         logger(LOG_INFO, "invalid ack number");
         return;
-    } 
-
+    }
     
     if (TCP_STATUS_FAST_RETRANSMIT == tcp->status) { // do not update rtt in FR
         tcp->status = TCP_STATUS_SLOW_START;
     } else {
         update_rtt(tcp);
     }
-    
-    if (ack == tcp->last_pkt_acked) { // duplicated ack
-        if (++tcp->dup_ack_cnt >= MAX_DUP_ACK) {
-            tcp->dup_ack_cnt = 0; // clear the dup_ack_cnt
-            tcp_send_loss(tcp);
-        }
-    } else {
-        switch (tcp->status) { // increasing ack
+
+    if (++tcp->ack_cnt[ack] >= MAX_DUP_ACK) { // test if dup ack
+        tcp->ack_cnt[ack] = 0;
+        tcp_send_loss(tcp);
+        return;
+    }
+
+    if (ack > tcp->last_pkt_acked) { // update last_ack and window size
+        switch (tcp->status) { 
         case TCP_STATUS_SLOW_START:
             tcp->window_size += ack - tcp->last_pkt_acked;
-            if (tcp->window_size >= SS_THRESH) {
+            if (tcp->window_size > SS_THRESH) {
                 tcp->window_size = SS_THRESH;
                 tcp->status = TCP_STATUS_CONGESTION_AVOIDANCE;
             }
             
             break;
 
-        case TCP_STATUS_CONGESTION_AVOIDANCE: // update rtt not here
+        case TCP_STATUS_CONGESTION_AVOIDANCE: // update rtt, but not here
             break;
         }
         
         tcp->stop_flag = 0; // now should be able to send
         tcp->timeout_cnt = 0; // clear continuous timeouts
-        tcp->dup_ack_cnt = 0;
         tcp->last_pkt_acked = ack;
     }
 
@@ -270,6 +267,8 @@ int check_send_timeout(tcp_send_t *tcp) {
  * a handy helper...
  */
 void dump_tcp_send(tcp_send_t *tcp) {
+    int i;
+    
     printf("-----------------\n");
     printf("| stop_flag: %d\t|\n", tcp->stop_flag);
     printf("| p_index: %d\t|\n", tcp->p_index);
@@ -294,11 +293,18 @@ void dump_tcp_send(tcp_send_t *tcp) {
     printf("| dev: %u\t|\n", tcp->dev);
     printf("| last_ack: %d\t|\n", tcp->last_pkt_acked);
     printf("| timeout_cnt: %d\n", tcp->timeout_cnt);
-    printf("| dup_ack_cnt: %d\n", tcp->dup_ack_cnt);
     printf("| c_index: %d\n", tcp->c_index);
     printf("| data: %p\n", tcp->data);
     printf("| ts: %u\n", tcp->ts);
     printf("| ss_threshold: %d\n", tcp->ss_threshold);
+
+    printf("dup acks:\n");
+    for (i = 0; i < (BT_CHUNK_SIZE / 1024 + 1); i++) {
+        if (tcp->ack_cnt[i] > 1) {
+            printf("%d, ", i);
+        }
+    }
+    printf("\n");
 
     return;
 }
