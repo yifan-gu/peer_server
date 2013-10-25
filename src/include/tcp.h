@@ -67,7 +67,7 @@ typedef struct tcp_send_s {
      */
     uint32_t last_pkt_acked;
     uint32_t last_pkt_sent;
-
+    uint32_t max_pkt_sent;
     /**
      * variables for handling loss
      */

@@ -104,6 +104,7 @@ int send_tcp(tcp_send_t *tcp) {
     }
 
     tcp->stop_flag = 1;
+    tcp->max_pkt_sent = MAX(tcp->max_pkt_sent, tcp->last_pkt_sent);
 
     return 0;
 }
@@ -183,15 +184,12 @@ static void update_rtt(tcp_send_t *tcp) {
  * handle the ack
  */
 void tcp_handle_ack(tcp_send_t *tcp, uint32_t ack) {
-    if (((BT_CHUNK_SIZE/1024) < ack)
-        || (0 == ack)
-        || (ack > (tcp->last_pkt_acked + tcp->window_size))) { // invalid ack
+    if ((ack > tcp->max_pkt_sent) || (ack <= 0)) {
         logger(LOG_INFO, "invalid ack number");
         return;
     }
     
     if (TCP_STATUS_FAST_RETRANSMIT == tcp->status) { // do not update rtt in FR
-        tcp->status = TCP_STATUS_SLOW_START;
     } else {
         update_rtt(tcp);
     }
@@ -206,8 +204,8 @@ void tcp_handle_ack(tcp_send_t *tcp, uint32_t ack) {
         switch (tcp->status) { 
         case TCP_STATUS_SLOW_START:
             tcp->window_size += ack - tcp->last_pkt_acked;
-            if (tcp->window_size > SS_THRESH) {
-                tcp->window_size = SS_THRESH;
+            if (tcp->window_size > tcp->ss_threshold) {
+                tcp->window_size = tcp->ss_threshold;
                 tcp->status = TCP_STATUS_CONGESTION_AVOIDANCE;
             }
             
@@ -215,6 +213,9 @@ void tcp_handle_ack(tcp_send_t *tcp, uint32_t ack) {
 
         case TCP_STATUS_CONGESTION_AVOIDANCE: // update rtt, but not here
             break;
+        case TCP_STATUS_FAST_RETRANSMIT:
+            tcp->status = TCP_STATUS_SLOW_START;
+            tcp->last_pkt_sent = ack;
         }
         
         tcp->stop_flag = 0; // now should be able to send
