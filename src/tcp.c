@@ -196,7 +196,7 @@ void tcp_handle_ack(tcp_send_t *tcp, uint32_t ack) {
         update_rtt(tcp);
     }
 
-    if (++tcp->ack_cnt[ack] >= MAX_DUP_ACK) { // test if dup ack
+    if (++tcp->ack_cnt[ack] > MAX_DUP_ACK) { // test if dup ack
         tcp->ack_cnt[ack] = 0;
         tcp_send_loss(tcp);
         return;
