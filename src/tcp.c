@@ -134,7 +134,7 @@ int deinit_tcp_send(tcp_send_t *tcp) {
  * tcp send loss, either timeout or dup-ack
  */
 static void tcp_send_loss(tcp_send_t *tcp) {
-    tcp->ss_threshold = MAX(tcp->ss_threshold/2, 2);
+    tcp->ss_threshold = MAX(tcp->window_size/2, 2);
     tcp->window_size = 1;
     tcp->last_pkt_sent = tcp->last_pkt_acked;
     tcp->status = TCP_STATUS_FAST_RETRANSMIT;
@@ -208,6 +208,9 @@ void tcp_handle_ack(tcp_send_t *tcp, uint32_t ack) {
         case TCP_STATUS_FAST_RETRANSMIT:
             if (ack >= tcp->max_pkt_sent) { // FR finished
                 tcp->status = TCP_STATUS_SLOW_START;
+            } else if (tcp->window_size > tcp->ss_threshold) {
+                tcp->window_size = tcp->ss_threshold;
+                tcp->status = TCP_STATUS_CONGESTION_AVOIDANCE;
             } else {
                 tcp->window_size++;
             }
