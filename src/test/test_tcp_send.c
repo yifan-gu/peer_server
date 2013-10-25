@@ -92,7 +92,7 @@ int main(int argc, char *argv[])
         }
 
         printf("%d circle\n", ++i);
-        check_send_timeout(&tcp);
+        tcp_send_timer(&tcp);
         send_tcp(&tcp);
         dump_tcp_send(&tcp);
         sleep(1);

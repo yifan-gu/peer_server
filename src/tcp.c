@@ -134,19 +134,11 @@ int deinit_tcp_send(tcp_send_t *tcp) {
  * tcp send loss, either timeout or dup-ack
  */
 static void tcp_send_loss(tcp_send_t *tcp) {
-    /*switch (tcp->status) {
-        
-    case TCP_STATUS_CONGESTION_AVOIDANCE:
-        tcp->status = TCP_STATUS_SLOW_START;
-        
-        case TCP_STATUS_SLOW_START:*/
     tcp->ss_threshold = MAX(tcp->ss_threshold/2, 2);
     tcp->window_size = 1;
     tcp->last_pkt_sent = tcp->last_pkt_acked;
     tcp->status = TCP_STATUS_FAST_RETRANSMIT;
     tcp->stop_flag = 0;
-    //break;
-//}
 
     return;
 }
@@ -214,8 +206,13 @@ void tcp_handle_ack(tcp_send_t *tcp, uint32_t ack) {
         case TCP_STATUS_CONGESTION_AVOIDANCE: // update rtt, but not here
             break;
         case TCP_STATUS_FAST_RETRANSMIT:
-            tcp->status = TCP_STATUS_SLOW_START;
-            tcp->last_pkt_sent = ack;
+            if (ack >= tcp->max_pkt_sent) { // FR finished
+                tcp->status = TCP_STATUS_SLOW_START;
+            } else {
+                tcp->window_size += 1;
+            }
+            
+            tcp->last_pkt_sent = ack; // do not retransmit those already received packets
         }
         
         tcp->stop_flag = 0; // now should be able to send
@@ -227,10 +224,11 @@ void tcp_handle_ack(tcp_send_t *tcp, uint32_t ack) {
 }
 
 /**
- * check if one tcp send connection is timeout
+ * update windowsize in Congestion Control state.
+ * Check if one tcp send connection is timeout
  * @return the number of the continuous timouts
  */
-int check_send_timeout(tcp_send_t *tcp) {
+int tcp_send_timer(tcp_send_t *tcp) {
     uint32_t now;
 
     now = get_timestamp_now();
@@ -296,6 +294,7 @@ void dump_tcp_send(tcp_send_t *tcp) {
     printf("| dev: %u\t|\n", tcp->dev);
     printf("| last_ack: %d\t|\n", tcp->last_pkt_acked);
     printf("| last_sent: %d\t\n", tcp->last_pkt_sent);
+    printf("| max_sent: %d\t\n", tcp->max_pkt_sent);
     printf("| timeout_cnt: %d\n", tcp->timeout_cnt);
     printf("| c_index: %d\n", tcp->c_index);
     printf("| data: %p\n", tcp->data);

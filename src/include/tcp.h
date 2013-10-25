@@ -30,11 +30,15 @@ enum tcp_status {
 };
 
 typedef struct tcp_send_s {
-
+    
+    /**
+     * store the ack counts even for obsolete ack,
+     * because that is a sign of congestion
+     */
     int ack_cnt[BT_CHUNK_SIZE / 1024 + 1];
 
     /**
-     * if stop flag == 1, then wait
+     * if stop flag == 1, then bypass the send
      * if stop flag == 0, then send
      */
     int stop_flag;
@@ -140,10 +144,11 @@ int deinit_tcp_send(tcp_send_t *tcp);
 void tcp_handle_ack(tcp_send_t *tcp, uint32_t ack);
 
 /**
- * check if one tcp send connection is timeout
+ * update windowsize in Congestion Control state.
+ * Check if one tcp send connection is timeout
  * @return the number of the continuous timouts
  */
-int check_send_timeout(tcp_send_t *tcp);
+int tcp_send_timer(tcp_send_t *tcp);
 
 /**
  * a handy helper...
