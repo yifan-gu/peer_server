@@ -70,7 +70,6 @@ static uint32_t get_timestamp_now() {
  * @return 0 on success, -1 if fails
  */
 int send_tcp(tcp_send_t *tcp) {
-    int i;
     pkt_param_t param;
 
     if (1 == tcp->stop_flag) {
@@ -85,8 +84,8 @@ int send_tcp(tcp_send_t *tcp) {
     param.p_count = 1;
     param.type = PACKET_TYPE_DATA;
     
-    for (i = 0; i < tcp->window_size; i++) {
-        param.seq = (tcp->last_pkt_acked + 1) + i; //seq = the NextPacketExpected by the receiver
+    for (; tcp->last_pkt_sent < (tcp->last_pkt_acked + tcp->window_size); tcp->last_pkt_sent++) {
+        param.seq = tcp->last_pkt_sent + 1; //seq = the NextPacketExpected by the receiver
         
         if (param.seq > BT_CHUNK_SIZE / 1024)
             break; // reach the tail
@@ -142,6 +141,7 @@ static void tcp_send_loss(tcp_send_t *tcp) {
         case TCP_STATUS_SLOW_START:*/
     tcp->ss_threshold = MAX(tcp->ss_threshold/2, 2);
     tcp->window_size = 1;
+    tcp->last_pkt_sent = tcp->last_pkt_acked;
     tcp->status = TCP_STATUS_FAST_RETRANSMIT;
     tcp->stop_flag = 0;
     //break;
@@ -183,7 +183,9 @@ static void update_rtt(tcp_send_t *tcp) {
  * handle the ack
  */
 void tcp_handle_ack(tcp_send_t *tcp, uint32_t ack) {
-    if ((0 == ack) || (ack > (tcp->last_pkt_acked + tcp->window_size))) { // invalid ack
+    if (((BT_CHUNK_SIZE/1024) < ack)
+        || (0 == ack)
+        || (ack > (tcp->last_pkt_acked + tcp->window_size))) { // invalid ack
         logger(LOG_INFO, "invalid ack number");
         return;
     }
@@ -292,6 +294,7 @@ void dump_tcp_send(tcp_send_t *tcp) {
     printf("| rtt: %u\t|\n", tcp->rtt);
     printf("| dev: %u\t|\n", tcp->dev);
     printf("| last_ack: %d\t|\n", tcp->last_pkt_acked);
+    printf("| last_sent: %d\t\n", tcp->last_pkt_sent);
     printf("| timeout_cnt: %d\n", tcp->timeout_cnt);
     printf("| c_index: %d\n", tcp->c_index);
     printf("| data: %p\n", tcp->data);

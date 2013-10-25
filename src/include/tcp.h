@@ -66,6 +66,7 @@ typedef struct tcp_send_s {
      * parameters for the sender
      */
     uint32_t last_pkt_acked;
+    uint32_t last_pkt_sent;
 
     /**
      * variables for handling loss
