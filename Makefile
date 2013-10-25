@@ -29,7 +29,7 @@ TEST_OBJS = $(patsubst %,$(ODIR)/%,$(_TEST_OBJS))
 
 BINS = peer make-chunks
 
-TESTBINS = test_packet test_send_message test_recv_message test_send_corrupt test_tcp_send
+TESTBINS = test_packet test_send_message test_recv_message test_send_corrupt test_tcp_send test_tcp_receiver
 
 # Explit build and testing targets
 all: ${BINS}
@@ -67,3 +67,6 @@ test_send_corrupt: $(TEST_OBJS) $(TESTDIR)/test_send_corrupt.o
 
 test_tcp_send: $(TEST_OBJS) $(TESTDIR)/test_tcp_send.o $(ODIR)/tcp.o
 	$(CC) -DDEBUG $(TEST_OBJS) $(TESTDIR)/test_tcp_send.o $(ODIR)/tcp.o -o $(TESTBINDIR)/test_tcp_send $(LDFLAGS)
+
+test_tcp_receiver: $(TEST_OBJS) $(TESTDIR)/test_tcp_receiver.o $(ODIR)/tcp.o $(ODIR)/input_buffer.o
+	$(CC) -DDEBUG $(TEST_OBJS) $(TESTDIR)/test_tcp_receiver.o $(ODIR)/input_buffer.o $(ODIR)/tcp.o -o $(TESTBINDIR)/test_tcp_receiver $(LDFLAGS)

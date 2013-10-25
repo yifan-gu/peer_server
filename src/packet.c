@@ -182,8 +182,8 @@ void print_packet(packet_t *pkt) {
     printf("| Type: %d\t|\n", GET_TYPE(pkt));
     printf("| Hdr_len: %d\t|\n", GET_HDR_LEN(pkt));
     printf("| Pkt_len: %d\t|\n", GET_PKT_LEN(pkt));
-    printf("| Seq: %d\t|\n", GET_SEQ(pkt));
-    printf("| Ack: %d\t|\n", GET_ACK(pkt));
+    printf("| Seq: %u\t|\n", GET_SEQ(pkt));
+    printf("| Ack: %u\t|\n", GET_ACK(pkt));
 
     if (nondata) {
         printf("| Chunk_cnt: %d\t|\n", GET_CHUNK_CNT(pkt));

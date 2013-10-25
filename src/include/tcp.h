@@ -14,7 +14,7 @@
  */
 #define SS_THRESH 64
 #define MAX_DUP_ACK 3
-#define DEFAULT_TIMEOUT 5000
+#define DEFAULT_TIMEOUT (10 * 1000) // milliseconds
 /**
  * return the offset(bytes) of the chunk in the original file
  * @param c_index, the chunk index in the "chunklist"
@@ -86,6 +86,11 @@ typedef struct tcp_send_s {
      * the last sending data
      */
     uint32_t ts;
+
+    /**
+     * the timestamp for last updating window size in Congestion Control
+     */
+    uint32_t fr_ts;
 
     uint32_t ss_threshold;
     
