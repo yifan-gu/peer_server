@@ -1,0 +1,9 @@
+For implementation:
+We use array in our system to represent peers and chunks, this will make the
+code reliable and easy to implement, however it also increase the memory consumption...
+Also, it's slower than hashmap
+ 
+For testing:
+More system tests are needed.
+
+

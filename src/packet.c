@@ -1,6 +1,7 @@
 #include <stdio.h>
 
 #include "packet.h"
+#include "spiffy.h"
 
 #ifdef TESTING_PACKET
 extern void test_message(uint8_t *buf, int i, ChunkList *cl);
@@ -19,7 +20,7 @@ static void send_udp(int socket, PeerList *p, int p_index, int p_count, uint8_t 
     int i, ret;
 
     for (i = 0; i < p_count; i++) {
-        ret = sendto(socket, buf, len, 0,
+        ret = spiffy_sendto(socket, buf, len, 0,
                      (struct sockaddr *) & (p->peers[p_index+i].addr), sizeof(p->peers[p_index+i].addr));
         if (ret < 0) {
             logger(LOG_ERROR, "sendto() failed");
@@ -141,6 +142,27 @@ void send_packet(pkt_param_t *pp) {
 }
 
 /**
+ * check if a packet is valid
+ * @param pkt,
+ * @return 1 if valid, 0 if not
+ */
+int valid_packet(packet_t *pkt) {
+    if (GET_MAGIC(pkt) != MAGIC) {
+        return 0;
+    }
+
+    if (GET_VERSION(pkt) != VERSION) {
+        return 0;
+    }
+
+    if (GET_TYPE(pkt) > PACKET_TYPE_DENIED) {
+        return 0;
+    }
+
+    return 1;
+}
+
+/**
  * a helper for debugging
  */
 void print_packet(packet_t *pkt) {
@@ -161,8 +183,8 @@ void print_packet(packet_t *pkt) {
     printf("| Type: %d\t|\n", GET_TYPE(pkt));
     printf("| Hdr_len: %d\t|\n", GET_HDR_LEN(pkt));
     printf("| Pkt_len: %d\t|\n", GET_PKT_LEN(pkt));
-    printf("| Seq: %d\t|\n", GET_SEQ(pkt));
-    printf("| Ack: %d\t|\n", GET_ACK(pkt));
+    printf("| Seq: %u\t|\n", GET_SEQ(pkt));
+    printf("| Ack: %u\t|\n", GET_ACK(pkt));
 
     if (nondata) {
         printf("| Chunk_cnt: %d\t|\n", GET_CHUNK_CNT(pkt));

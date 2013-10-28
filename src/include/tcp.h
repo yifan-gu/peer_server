@@ -3,6 +3,7 @@
 
 #include "packet.h"
 
+#define MAX(a, b) ((a) > (b) ? (a) : (b))
 /**
  * the max receiver's window size
  */
@@ -12,12 +13,14 @@
  * the slow-start threshold size
  */
 #define SS_THRESH 64
-
+#define MAX_DUP_ACK 3
+#define DEFAULT_TIMEOUT (10 * 1000) // milliseconds
 /**
  * return the offset(bytes) of the chunk in the original file
  * @param c_index, the chunk index in the "chunklist"
  */
 #define GET_OFFSET(c_index, chunklist) (chunklist.chunks[(c_index)].id * BT_CHUNK_SIZE)
+#define GET_RTO(tcp) ((tcp)->rtt + 4 * (tcp)->dev)
 
 enum tcp_status {
     TCP_STATUS_SLOW_START,
@@ -27,6 +30,18 @@ enum tcp_status {
 };
 
 typedef struct tcp_send_s {
+    
+    /**
+     * store the ack counts even for obsolete ack,
+     * because that is a sign of congestion
+     */
+    int ack_cnt[BT_CHUNK_SIZE / 1024 + 1];
+
+    /**
+     * if stop flag == 1, then bypass the send
+     * if stop flag == 0, then send
+     */
+    int stop_flag;
 
     /**
      * the index of the peer I am communicating with
@@ -46,11 +61,21 @@ typedef struct tcp_send_s {
      * round-trip time, in millisecond
      */
     uint32_t rtt;
+    /**
+     * deviation for computing rto
+     */
+    uint32_t dev;
     
     /**
      * parameters for the sender
      */
     uint32_t last_pkt_acked;
+    uint32_t last_pkt_sent;
+    uint32_t max_pkt_sent;
+    /**
+     * variables for handling loss
+     */
+    int timeout_cnt;
     //uint32_t last_pkt_sent;
     
     /**
@@ -67,6 +92,11 @@ typedef struct tcp_send_s {
      * the last sending data
      */
     uint32_t ts;
+
+    /**
+     * the timestamp for last updating window size in Congestion Control
+     */
+    uint32_t fr_ts;
 
     uint32_t ss_threshold;
     
@@ -107,5 +137,23 @@ int init_tcp_send(tcp_send_t *tcp, int p_index, int c_index);
  * deinit the tcp_send_t struct
  */
 int deinit_tcp_send(tcp_send_t *tcp);
+
+/**
+ * handle the ack
+ */
+void tcp_handle_ack(tcp_send_t *tcp, uint32_t ack);
+
+/**
+ * update windowsize in Congestion Control state.
+ * Check if one tcp send connection is timeout
+ * @return the number of the continuous timouts
+ */
+int tcp_send_timer(tcp_send_t *tcp);
+
+/**
+ * a handy helper...
+ */
+void dump_tcp_send(tcp_send_t *tcp);
+
 
 #endif /* _TCP_H_ */
