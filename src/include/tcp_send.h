@@ -1,5 +1,5 @@
-#ifndef _TCP_H_
-#define _TCP_H_
+#ifndef _TCP_SEND_H_
+#define _TCP_SEND_H_
 
 #include "packet.h"
 
@@ -156,4 +156,4 @@ int tcp_send_timer(tcp_send_t *tcp);
 void dump_tcp_send(tcp_send_t *tcp);
 
 
-#endif /* _TCP_H_ */
+#endif /* _TCP_SEND_H_ */
