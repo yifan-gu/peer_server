@@ -12,19 +12,19 @@ TESTDEFS	= -DTESTING			# comment this out to disable debugging code
 
 _HEADERS = bt_parse.h  chunk.h  debug.h  debug-text.h  input_buffer.h  sha.h  spiffy.h \
 		   logger.h  packet.h peer_server.h peerlist.h download.h upload.h linkedlist.h \
-		   parse_packet.h peer.h send_helper.h tcp_send.h
+		   parse_packet.h peer.h send_helper.h tcp_util.h tcp_send.h tcp_recv.h
 HEADERS = $(patsubst %,$(IDIR)/%,$(_HEADERS))
 
 _OBJS = peer.o bt_parse.o spiffy.o debug.o input_buffer.o chunk.o sha.o \
 		logger.o peer_server.o peerlist.o download.o upload.o linkedlist.o packet.o \
-		parse_packet.o send_helper.o tcp_send.o
+		parse_packet.o send_helper.o tcp_util.o tcp_send.o tcp_recv.o
 OBJS = $(patsubst %,$(ODIR)/%,$(_OBJS))
 
 _MK_CHUNK_OBJS   = make_chunks.o chunk.o sha.o
 MK_CHUNK_OBJS = $(patsubst %,$(ODIR)/%,$(_MK_CHUNK_OBJS))
 
 _TEST_OBJS   = logger.o peer_server.o peerlist.o chunk.o sha.o packet.o linkedlist.o \
-		bt_parse.o debug.o download.o spiffy.o
+		bt_parse.o debug.o download.o spiffy.o tcp_util.o
 TEST_OBJS = $(patsubst %,$(ODIR)/%,$(_TEST_OBJS))
 
 BINS = peer make-chunks

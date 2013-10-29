@@ -129,7 +129,7 @@ void test_message(uint8_t *buf, int i, ChunkList *cl) {
 
         check_pkt_header(&pkt_clone, PACKET_TYPE_DATA, 16, strlen(data)+1+HEADER_SIZE, 1, 0, 0);
 
-        assert(0 == strcmp(data, (char *)GET_PAYLOAD(&pkt_clone)));
+        assert(0 == strcmp(data, (char *)GET_DATA(&pkt_clone)));
 
         return;
     }

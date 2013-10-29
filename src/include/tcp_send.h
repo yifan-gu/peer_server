@@ -2,25 +2,22 @@
 #define _TCP_SEND_H_
 
 #include "packet.h"
+#include "tcp_util.h"
 
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
-/**
- * the max receiver's window size
- */
-#define RECV_WINDOW_SIZE 512
 
 /**
  * the slow-start threshold size
  */
 #define SS_THRESH 64
 #define MAX_DUP_ACK 3
-#define DEFAULT_TIMEOUT (10 * 1000) // milliseconds
+
 /**
  * return the offset(bytes) of the chunk in the original file
  * @param c_index, the chunk index in the "chunklist"
  */
-#define GET_OFFSET(c_index, chunklist) (chunklist.chunks[(c_index)].id * BT_CHUNK_SIZE)
-#define GET_RTO(tcp) ((tcp)->rtt + 4 * (tcp)->dev)
+#define GET_CHUNK_OFFSET(c_index, chunklist) (chunklist.chunks[(c_index)].id * BT_CHUNK_SIZE)
+
 
 enum tcp_status {
     TCP_STATUS_SLOW_START,
@@ -30,7 +27,8 @@ enum tcp_status {
 };
 
 typedef struct tcp_send_s {
-    
+
+    tcp_util_t util;
     /**
      * store the ack counts even for obsolete ack,
      * because that is a sign of congestion
@@ -42,11 +40,7 @@ typedef struct tcp_send_s {
      * if stop flag == 0, then send
      */
     int stop_flag;
-
-    /**
-     * the index of the peer I am communicating with
-     */
-    int p_index;
+    
     /**
      * status of the sender
      */
@@ -72,16 +66,8 @@ typedef struct tcp_send_s {
     uint32_t last_pkt_acked;
     uint32_t last_pkt_sent;
     uint32_t max_pkt_sent;
-    /**
-     * variables for handling loss
-     */
-    int timeout_cnt;
-    //uint32_t last_pkt_sent;
     
-    /**
-     * the index of the chunk I am transferring
-     */
-    int c_index;
+    //uint32_t last_pkt_sent;
     
     /**
      * the data of the file
@@ -89,37 +75,12 @@ typedef struct tcp_send_s {
     uint8_t *data;
 
     /**
-     * the last sending data
+     * the timestamp for last updating window size in Congestion Avoidance
      */
-    uint32_t ts;
-
-    /**
-     * the timestamp for last updating window size in Congestion Control
-     */
-    uint32_t fr_ts;
+    uint32_t ca_ts;
 
     uint32_t ss_threshold;
-    
 } tcp_send_t;
-
-typedef struct tcp_recv_s {
-    /**
-     * parameters for the receiver
-     */
-    uint32_t next_pkt_expected;
-    uint32_t last_pkt_read;
-
-    /**
-     * the buffer for the receiver
-     */
-    packet_t recv_buf[RECV_WINDOW_SIZE];
-
-    /**
-     * the last time sending ack
-     */
-    uint32_t ts;
-    
-} tcp_recv_t;
 
 /**
  * send the packet within the window
