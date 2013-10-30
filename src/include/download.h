@@ -9,8 +9,25 @@
 
 typedef struct _Download {
     Linlist queue;
+
+    // The chunk index in getchunks
     int getIndex;
+    int p_index;
+
+    // timeout:
+    // - last sent ack timestamp
+    //
+    // next seq number
+    // receive window
+    //
+    // file
+    //
+    // rtt
+
 }Download;
+
+// dl_check_timeout
+// @return Number of timeout times. -1 if the connection is finished
 
 int init_download(Download *dl);
 
