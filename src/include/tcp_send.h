@@ -28,19 +28,40 @@ enum tcp_status {
 
 typedef struct tcp_send_s {
 
-    tcp_util_t util;
+    /**
+     * the index of the peer I am communicating with
+     */
+    int p_index;
+    /**
+     * the index of the chunk I am transferring
+     */
+    int c_index;
+    
     /**
      * store the ack counts even for obsolete ack,
      * because that is a sign of congestion
      */
     int ack_cnt[BT_CHUNK_SIZE / 1024 + 1];
+    
+    /**
+     * array for saving timeout info for each pkt
+     */
+    uint32_t ack_timeout[BT_CHUNK_SIZE / 1024 + 1];
 
     /**
      * if stop flag == 1, then bypass the send
      * if stop flag == 0, then send
      */
     int stop_flag;
-    
+
+    /**
+     * if block update_rtt on receiving ack
+     */
+    int block_update;
+    /**
+     * if sending is finished
+     */
+    int finished;
     /**
      * status of the sender
      */
@@ -59,6 +80,12 @@ typedef struct tcp_send_s {
      * deviation for computing rto
      */
     uint32_t dev;
+    /**
+     * the last ts when sending data
+     */
+    uint32_t ts;
+    
+    int timeout_cnt;
     
     /**
      * parameters for the sender

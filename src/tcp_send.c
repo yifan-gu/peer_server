@@ -26,7 +26,7 @@ static int load_data(tcp_send_t *tcp) {
     
     /* mmap */
     addr =  mmap(NULL, BT_CHUNK_SIZE, PROT_READ, MAP_SHARED,
-                 fileno(master_chunk), GET_CHUNK_OFFSET(tcp->util.c_index, haschunks));
+                 fileno(master_chunk), GET_CHUNK_OFFSET(tcp->c_index, haschunks));
     if (MAP_FAILED == addr) {
         logger(LOG_ERROR, "mmap() failed");
         perror("");
@@ -56,8 +56,9 @@ static int unload_data(tcp_send_t *tcp) {
  */
 int send_tcp(tcp_send_t *tcp) {
     pkt_param_t param;
+    uint32_t timeout;
 
-    if (1 == tcp->stop_flag) {
+    if (tcp->stop_flag || tcp->finished) {
         return 0;
     }
     
@@ -65,7 +66,7 @@ int send_tcp(tcp_send_t *tcp) {
     PKT_PARAM_CLEAR(&param);
     param.socket = sock;
     param.p = &peerlist;
-    param.p_index = tcp->util.p_index;
+    param.p_index = tcp->p_index;
     param.p_count = 1;
     param.type = PACKET_TYPE_DATA;
     
@@ -80,9 +81,15 @@ int send_tcp(tcp_send_t *tcp) {
 
         send_packet(&param);
         
-        /* update ts */
-        tcp->util.ts = get_timestamp_now();
-        if (tcp->util.ts == 0) {
+        /* update timeout */
+        timeout = GET_RTO(tcp);
+        if (0 == timeout) { // bootstrap
+            timeout = DEFAULT_TIMEOUT;
+        }
+        tcp->ack_timeout[param.seq] = get_timestamp_now() + timeout;
+        
+        tcp->ts = get_timestamp_now();
+        if (tcp->ts == 0) {
             logger(LOG_ERROR, "update ts failed");
             return -1;
         }
@@ -101,8 +108,8 @@ int init_tcp_send(tcp_send_t *tcp, int p_index, int c_index) {
     memset(tcp, 0, sizeof(tcp_send_t));
 
     tcp->window_size = 8; // TODO: change to 1 for ss
-    tcp->util.p_index = p_index;
-    tcp->util.c_index = c_index;
+    tcp->p_index = p_index;
+    tcp->c_index = c_index;
     tcp->ss_threshold = SS_THRESH;
 
     return load_data(tcp);
@@ -123,6 +130,7 @@ static void tcp_send_loss(tcp_send_t *tcp) {
     tcp->window_size = 1;
     tcp->last_pkt_sent = tcp->last_pkt_acked;
     tcp->status = TCP_STATUS_FAST_RETRANSMIT;
+    tcp->block_update = 1;
     tcp->stop_flag = 0;
 
     return;
@@ -132,14 +140,19 @@ static void tcp_send_loss(tcp_send_t *tcp) {
  * handle the ack
  */
 void tcp_handle_ack(tcp_send_t *tcp, uint32_t ack) {
+    if (tcp->finished) {
+        return;
+    }
+    
     if ((ack > tcp->max_pkt_sent) || (ack <= 0)) {
         logger(LOG_INFO, "invalid ack number");
         return;
     }
-    
-    if (TCP_STATUS_FAST_RETRANSMIT == tcp->status) { // do not update rtt in FR
+
+    if (!tcp->block_update) { // do not update rtt in first ack from FR
+        update_rtt(&tcp->rtt, &tcp->dev, tcp->ts);
     } else {
-        update_rtt(&tcp->util);
+        tcp->block_update = 0;
     }
 
     if (++tcp->ack_cnt[ack] > MAX_DUP_ACK) { // test if dup ack
@@ -156,7 +169,6 @@ void tcp_handle_ack(tcp_send_t *tcp, uint32_t ack) {
                 tcp->window_size = tcp->ss_threshold;
                 tcp->status = TCP_STATUS_CONGESTION_AVOIDANCE;
             }
-            
             break;
 
         case TCP_STATUS_CONGESTION_AVOIDANCE: // update rtt, but not here
@@ -175,8 +187,12 @@ void tcp_handle_ack(tcp_send_t *tcp, uint32_t ack) {
         }
         
         tcp->stop_flag = 0; // now should be able to send
-        tcp->util.timeout_cnt = 0; // clear continuous timeouts
+        tcp->timeout_cnt = 0; // clear continuous timeouts
         tcp->last_pkt_acked = ack;
+        
+        if (tcp->last_pkt_acked >= BT_CHUNK_SIZE / 1024) {
+            tcp->finished = 1;
+        }
     }
 
     return;
@@ -185,13 +201,18 @@ void tcp_handle_ack(tcp_send_t *tcp, uint32_t ack) {
 /**
  * update windowsize in Congestion Control state.
  * Check if one tcp send connection is timeout
- * @return the number of the continuous timouts
+ * @return the number of the continuous timouts, -1 if already finished
  */
 int tcp_send_timer(tcp_send_t *tcp) {
     uint32_t now;
 
+    /* test if finished */
+    if (tcp->finished) {
+        return -1;
+    }
+    
     now = get_timestamp_now();
-
+    
     /* bootstrap for updating window size in Congestion Avoidance */
     if ((0 == tcp->ca_ts) && (TCP_STATUS_CONGESTION_AVOIDANCE == tcp->status)) {
         tcp->ca_ts = now;
@@ -205,14 +226,17 @@ int tcp_send_timer(tcp_send_t *tcp) {
     }
     
     if (0 == tcp->stop_flag) { // nothing sent, so no need to check timeouts
-        return tcp->util.timeout_cnt;
+        return tcp->timeout_cnt;
     }
 
-    if (is_timeout(&tcp->util, now)) {
-        tcp_send_loss(tcp);
+    if (now < tcp->ack_timeout[tcp->last_pkt_acked+1]) {
+        return tcp->timeout_cnt;
     }
+
+    tcp->timeout_cnt++;
+    tcp_send_loss(tcp);
     
-    return tcp->util.timeout_cnt;
+    return tcp->timeout_cnt;
 }
 
 /**
@@ -223,7 +247,8 @@ void dump_tcp_send(tcp_send_t *tcp) {
     
     printf("-----------------\n");
     printf("| stop_flag: %d\t|\n", tcp->stop_flag);
-    printf("| p_index: %d\t|\n", tcp->util.p_index);
+    printf("| finished: %d\t|\n", tcp->finished);
+    printf("| p_index: %d\t|\n", tcp->p_index);
     switch(tcp->status) {
     case TCP_STATUS_SLOW_START:
         printf("| status: SS\t|\n");
@@ -241,15 +266,16 @@ void dump_tcp_send(tcp_send_t *tcp) {
         printf("| status: undefined\t\n");
     }
     printf("| window_size: %d\t|\n", tcp->window_size);
-    printf("| rtt: %u\t|\n", tcp->util.rtt);
-    printf("| dev: %u\t|\n", tcp->util.dev);
+    printf("| rtt: %u\t|\n", tcp->rtt);
+    printf("| dev: %u\t|\n", tcp->dev);
     printf("| last_ack: %d\t|\n", tcp->last_pkt_acked);
     printf("| last_sent: %d\t\n", tcp->last_pkt_sent);
     printf("| max_sent: %d\t\n", tcp->max_pkt_sent);
-    printf("| timeout_cnt: %d\n", tcp->util.timeout_cnt);
-    printf("| c_index: %d\n", tcp->util.c_index);
+    printf("| timeout_cnt: %d\n", tcp->timeout_cnt);
+    printf("| c_index: %d\n", tcp->c_index);
+    printf("| block_update: %d\t\n", tcp->block_update);
     printf("| data: %p\n", tcp->data);
-    printf("| ts: %u\n", tcp->util.ts);
+    printf("| ts: %u\n", tcp->ts);
     printf("| ss_threshold: %d\n", tcp->ss_threshold);
 
     printf("dup acks:\n");

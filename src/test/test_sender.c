@@ -1,29 +1,49 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
 #include <unistd.h>
-#include <sys/time.h>
 
-#include "tcp_send.h"
 #include "packet.h"
 #include "chunk.h"
 #include "peer_server.h"
+#include "input_buffer.h"
 
 extern PeerList peerlist;
 extern ChunkList haschunks;
-
-bt_config_t config;
 int sock;
+
+void handle_user_input(char *line, void *cbdata) {
+    uint32_t seq;
+    pkt_param_t param;
+    char data[900];
+    
+    
+    if (sscanf(line, "%d", &seq)) {
+        sprintf(data, "data packet[%d]", seq);
+        PKT_PARAM_CLEAR(&param);
+        param.socket = sock;
+        param.p = &peerlist;
+        param.p_count = -1;
+        param.c = &haschunks;
+        param.c_count = 0;
+        param.seq = seq;
+        param.ack = 0;
+        param.type = PACKET_TYPE_DATA;
+        param.payload = (uint8_t *)data;
+        /*if (12 == seq) {
+            param.payload_size = 340;
+            } else */
+            param.payload_size = sizeof(data);
+        send_packet(&param);
+    }
+}
 
 int main(int argc, char *argv[])
 {
     fd_set readfds;
     struct sockaddr_in myaddr;
-    //char *dummy_data = "hello world";
-    tcp_send_t tcp;
-    
+    bt_config_t config;
+    struct user_iobuf *userbuf;
+
     bt_init(&config, argc, argv);
 
 #ifdef TESTING
@@ -38,7 +58,12 @@ int main(int argc, char *argv[])
         logger(LOG_ERROR, "Peer init failed!");
         exit(0);
     }
-
+    
+    if ((userbuf = create_userbuf()) == NULL) {
+        perror("peer_run could not allocate userbuf");
+        exit(-1);
+    }
+    
     if ((sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_IP)) == -1) {
         perror("peer_run could not create socket");
         exit(-1);
@@ -54,25 +79,21 @@ int main(int argc, char *argv[])
         exit(-1);
     }
 
-    int index = 1; // the peer's index in the peerlist
-    if (init_tcp_send(&tcp, index, 0) < 0) {
-        logger(LOG_ERROR, "tcp init failed");
-        return -1;
-    }
-
-    int i = 0;
+    printf("listening...\n");
+    
     while (1) {
         int nfds;
         int ret;
         struct sockaddr addr;
         socklen_t socklen;
-        struct timeval tv;//, ts;
         
         char buf[PACKET_SIZE];
         packet_t pkt;
         
+        FD_SET(STDIN_FILENO, &readfds);
         FD_SET(sock, &readfds);
-        nfds = select(sock+1, &readfds, NULL, NULL, &tv);
+        
+        nfds = select(sock+1, &readfds, NULL, NULL, NULL);
 
         if (nfds > 0) {
             if (FD_ISSET(sock, &readfds)) {
@@ -84,36 +105,17 @@ int main(int argc, char *argv[])
                 }
 
                 DECODE_PKT(buf, &pkt, ret);
-                if (PACKET_TYPE_ACK == GET_TYPE(&pkt)) {
-                    printf("recv an ack: %d\n", GET_ACK(&pkt));
 
-                    tcp_handle_ack(&tcp, GET_ACK(&pkt));
-                }
+                printf("recv a packet\n");
+                //print_packet(&pkt);
+                printf("packet ack: %d\n", GET_ACK(&pkt));
+            }
+
+            if (FD_ISSET(STDIN_FILENO, &readfds)) {
+                process_user_input(STDIN_FILENO, userbuf, handle_user_input,
+                                   "Currently unused");
             }
         }
-
-        printf("%d circle\n", ++i);
-        tcp_send_timer(&tcp);
-        send_tcp(&tcp);
-        dump_tcp_send(&tcp);
-        //sleep(1);
-        //gettimeofday(&ts, NULL);
-        //srandom(ts.tv_sec);
-
-        //uint32_t sleeptime = 500 + random() % 500; // sleep 500 - 1500 ms
-        //printf("sleep for: %dms\n", sleeptime);
-        //usleep(sleeptime * 1000);
-
-        if (tcp.finished) {
-            printf("finished!\n");
-            break;
-        }
-    }
-
-    if (deinit_tcp_send(&tcp) < 0) {
-        logger(LOG_ERROR, "deinit failed");
-        perror("");
-        return -1;
     }
     
     return 0;

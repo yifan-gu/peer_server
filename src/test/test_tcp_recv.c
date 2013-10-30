@@ -1,29 +1,42 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
 #include <unistd.h>
 #include <sys/time.h>
 
-#include "tcp_send.h"
 #include "packet.h"
+#include "tcp_recv.h"
 #include "chunk.h"
 #include "peer_server.h"
 
 extern PeerList peerlist;
 extern ChunkList haschunks;
-
-bt_config_t config;
 int sock;
+
+void handle_user_input(char *line, void *cbdata) {
+    uint32_t ack;
+    pkt_param_t param;
+    
+    if (sscanf(line, "%d", &ack)) {
+        PKT_PARAM_CLEAR(&param);
+        param.socket = sock;
+        param.p = &peerlist;
+        param.p_count = -1;
+        param.c = &haschunks;
+        param.c_count = 0;
+        param.seq = 0;
+        param.ack = ack;
+        param.type = PACKET_TYPE_ACK;
+        send_packet(&param);
+    }
+}
 
 int main(int argc, char *argv[])
 {
     fd_set readfds;
     struct sockaddr_in myaddr;
-    //char *dummy_data = "hello world";
-    tcp_send_t tcp;
-    
+    bt_config_t config;
+    tcp_recv_t tcp;
+
     bt_init(&config, argc, argv);
 
 #ifdef TESTING
@@ -38,7 +51,7 @@ int main(int argc, char *argv[])
         logger(LOG_ERROR, "Peer init failed!");
         exit(0);
     }
-
+    
     if ((sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_IP)) == -1) {
         perror("peer_run could not create socket");
         exit(-1);
@@ -54,8 +67,10 @@ int main(int argc, char *argv[])
         exit(-1);
     }
 
+    printf("listening...\n");
+    
     int index = 1; // the peer's index in the peerlist
-    if (init_tcp_send(&tcp, index, 0) < 0) {
+    if (init_tcp_recv(&tcp, index, 0, "test.log") < 0) {
         logger(LOG_ERROR, "tcp init failed");
         return -1;
     }
@@ -72,8 +87,9 @@ int main(int argc, char *argv[])
         packet_t pkt;
         
         FD_SET(sock, &readfds);
+        
         nfds = select(sock+1, &readfds, NULL, NULL, &tv);
-
+        
         if (nfds > 0) {
             if (FD_ISSET(sock, &readfds)) {
                 ret = recvfrom(sock, buf, PACKET_SIZE, 0, &addr, &socklen);
@@ -84,37 +100,34 @@ int main(int argc, char *argv[])
                 }
 
                 DECODE_PKT(buf, &pkt, ret);
-                if (PACKET_TYPE_ACK == GET_TYPE(&pkt)) {
-                    printf("recv an ack: %d\n", GET_ACK(&pkt));
 
-                    tcp_handle_ack(&tcp, GET_ACK(&pkt));
-                }
+                printf("recv a packet\n");
+                //print_packet(&pkt);
+                printf("packet seq: %d\n", GET_SEQ(&pkt));
+
+                recv_tcp(&tcp, &pkt);
             }
+
         }
 
         printf("%d circle\n", ++i);
-        tcp_send_timer(&tcp);
-        send_tcp(&tcp);
-        dump_tcp_send(&tcp);
+        tcp_recv_timer(&tcp);
+        dump_tcp_recv(&tcp);
         //sleep(1);
         //gettimeofday(&ts, NULL);
         //srandom(ts.tv_sec);
 
-        //uint32_t sleeptime = 500 + random() % 500; // sleep 500 - 1500 ms
+        //uint32_t sleeptime = 500 + random() % 1000; // sleep 500 - 1500 ms
         //printf("sleep for: %dms\n", sleeptime);
         //usleep(sleeptime * 1000);
 
         if (tcp.finished) {
-            printf("finished!\n");
+            printf("finished\n");
             break;
         }
     }
 
-    if (deinit_tcp_send(&tcp) < 0) {
-        logger(LOG_ERROR, "deinit failed");
-        perror("");
-        return -1;
-    }
+    save_buffer(&tcp);
     
     return 0;
 }
