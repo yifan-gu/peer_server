@@ -33,4 +33,6 @@ int init_download(Download *dl);
 
 int find_unfetched_chunk(int);
 
+// find another one to download
+
 #endif // for #ifndef _DOWNLOAD_H

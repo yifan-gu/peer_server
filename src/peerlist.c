@@ -1,6 +1,18 @@
 #include <peerlist.h>
 #include <string.h>
 
+int init_peer(Peer *pr){
+    pr->is_alive = 0;
+    pr->is_downloading = 0;
+    pr->is_uploading = 0;
+    init_download(& pr->dl);
+    return 0;
+}
+
+void die(Peer *pr){
+    pr->is_alive = 0;
+}
+
 int init_peerlist(PeerList *pl, bt_peer_t *peers, int selfid) {
     bt_peer_t *p;
     int i = 0;
@@ -12,7 +24,7 @@ int init_peerlist(PeerList *pl, bt_peer_t *peers, int selfid) {
 
         // init peer
         pl->peers[i].addr = p->addr;
-        init_download(& pl->peers[i].dl);
+        init_peer(&pl->peers[i]);
 
         i ++;
     }

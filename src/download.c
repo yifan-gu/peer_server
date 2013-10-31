@@ -40,3 +40,10 @@ int find_unfetched_chunk(int p_index) {
 
     return -1;
 }
+
+// find another one to download
+//  iterate each peer
+//    if find_unfetched_chunk() return >= 0
+//      get it
+//    else < 0
+//      send whohas
