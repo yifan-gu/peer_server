@@ -25,6 +25,10 @@ void update_rtt(uint32_t *rtt, uint32_t *dev, uint32_t ts) {
     uint32_t s_rtt;
     uint32_t s_dev;
 
+    if (0 == ts) { // do nothing
+        return;
+    }
+
     s_rtt = get_timestamp_now() - ts;
     if (s_rtt < 0) {
         logger(LOG_ERROR, "get_timestamp_now() failed");

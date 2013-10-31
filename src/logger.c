@@ -36,4 +36,5 @@ void log_print(int level, char* filename, int line, char *fmt,...)
 
     va_end( list );
     fputc( '\n', log_fp );
+    fflush(log_fp);
 }

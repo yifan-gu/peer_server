@@ -4,6 +4,7 @@
 #include "packet.h"
 #include "chunk.h"
 #include "peer_server.h"
+#include "spiffy.h"
 
 extern PeerList peerlist;
 extern ChunkList haschunks;
@@ -45,6 +46,9 @@ int main(int argc, char *argv[])
         perror("peer_run could not bind socket");
         exit(-1);
     }
+    
+    /* init spiffy */
+    spiffy_init(config.identity, (struct sockaddr *) &myaddr, sizeof(myaddr));
 
     PKT_PARAM_CLEAR(&param);
     param.socket = sock;

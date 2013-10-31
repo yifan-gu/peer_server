@@ -48,6 +48,8 @@ typedef struct tcp_send_s {
      */
     uint32_t ack_timeout[BT_CHUNK_SIZE / 1024 + 1];
 
+    uint32_t seq_ts[BT_CHUNK_SIZE / 1024 + 1];
+
     /**
      * if stop flag == 1, then bypass the send
      * if stop flag == 0, then send
@@ -84,6 +86,8 @@ typedef struct tcp_send_s {
      * the last ts when sending data
      */
     uint32_t ts;
+
+    uint32_t last_ack_ts;
     
     int timeout_cnt;
     

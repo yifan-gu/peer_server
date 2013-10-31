@@ -77,8 +77,10 @@ static int send_ack(int p_index, int ack) {
     param.p_count = 1;
     param.ack = ack;
     param.type = PACKET_TYPE_ACK;
-    
+
     send_packet(&param);
+
+    logger(LOG_DEBUG, "send ack: %d", param.ack);
 
     return 0;
 }
@@ -139,7 +141,7 @@ int recv_tcp(tcp_recv_t *tcp, packet_t *pkt) {
  */
 static void tcp_recv_loss(tcp_recv_t *tcp) {
     int i ;
-    
+
     for (i = 0; i < LOSS_ACK_NUM; i++) {
         send_ack(tcp->p_index, get_ack(tcp));
     }
@@ -167,7 +169,8 @@ int tcp_recv_timer(tcp_recv_t *tcp) {
         return tcp->timeout_cnt;
     }
     
-    if ((now - tcp->ts) < GET_RTO(tcp)) {
+    //if ((now - tcp->ts) < GET_RTO(tcp)) {
+    if ((now - tcp->ts) < 5000) {
         return tcp->timeout_cnt;
     }
 

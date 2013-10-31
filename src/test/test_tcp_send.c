@@ -10,6 +10,7 @@
 #include "packet.h"
 #include "chunk.h"
 #include "peer_server.h"
+#include "spiffy.h"
 
 extern PeerList peerlist;
 extern ChunkList haschunks;
@@ -25,6 +26,7 @@ int main(int argc, char *argv[])
     tcp_send_t tcp;
     
     bt_init(&config, argc, argv);
+    
 
 #ifdef TESTING
     config.identity = 1; // your group number here
@@ -39,6 +41,7 @@ int main(int argc, char *argv[])
         exit(0);
     }
 
+    
     if ((sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_IP)) == -1) {
         perror("peer_run could not create socket");
         exit(-1);
@@ -53,7 +56,10 @@ int main(int argc, char *argv[])
         perror("peer_run could not bind socket");
         exit(-1);
     }
-
+    
+    /* init spiffy */
+    spiffy_init(config.identity, (struct sockaddr *) &myaddr, sizeof(myaddr));
+    
     int index = 1; // the peer's index in the peerlist
     if (init_tcp_send(&tcp, index, 0) < 0) {
         logger(LOG_ERROR, "tcp init failed");
@@ -76,7 +82,7 @@ int main(int argc, char *argv[])
 
         if (nfds > 0) {
             if (FD_ISSET(sock, &readfds)) {
-                ret = recvfrom(sock, buf, PACKET_SIZE, 0, &addr, &socklen);
+                ret = spiffy_recvfrom(sock, buf, PACKET_SIZE, 0, &addr, &socklen);
 
                 if (ret <= 0) {
                     logger(LOG_ERROR, "recvfrom() error");
@@ -85,17 +91,19 @@ int main(int argc, char *argv[])
 
                 DECODE_PKT(buf, &pkt, ret);
                 if (PACKET_TYPE_ACK == GET_TYPE(&pkt)) {
-                    printf("recv an ack: %d\n", GET_ACK(&pkt));
+                    logger(LOG_DEBUG, "recv an ack: %d\n", GET_ACK(&pkt));
+                    printf("%d circle\n", ++i);
+                    dump_tcp_send(&tcp);
 
                     tcp_handle_ack(&tcp, GET_ACK(&pkt));
                 }
             }
         }
 
-        printf("%d circle\n", ++i);
+        //printf("%d circle\n", ++i);
         tcp_send_timer(&tcp);
         send_tcp(&tcp);
-        dump_tcp_send(&tcp);
+        
         //sleep(1);
         //gettimeofday(&ts, NULL);
         //srandom(ts.tv_sec);
