@@ -9,6 +9,8 @@ extern ChunkList getchunks;
 extern PeerList peerlist;
 extern int sock;
 
+// send whohas
+
 void parse_ihavechunks(packet_t *pkt, int p_index) {
     int i, j, k, count;
     char *hexbuf;
@@ -85,6 +87,7 @@ int parse_download(packet_t *pkt, int p_index){
     if(fail_flag) {
         if(ll_count(&dl->queue) != 0){
             ll_delete_allnodes(&dl->queue, delete_chunkline);
+            init_linkedlist(& dl->queue);
         }
         return -1;
     }

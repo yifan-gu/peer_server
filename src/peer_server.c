@@ -13,6 +13,8 @@ ChunkList haschunks;
 ChunkList getchunks;
 ChunkList ihavechunks;
 int max_conn;
+int dl_num;
+int ul_num;
 
 char *readString(FILE *fp)
 {
@@ -66,9 +68,12 @@ int peer_init(bt_config_t *config) {
     if(parse_chunk(&haschunks, config->has_chunk_file) < 0 ) {
         return -1;
     }
+    getchunks.count = 0;
 
     // max_conn;
     max_conn = config->max_conn;
+    dl_num = 0;
+    ul_num = 0;
     return 0;
 }
 
@@ -101,15 +106,15 @@ int parse_chunk(ChunkList *cl, char *chunk_list_file) {
     return 0;
 }
 
-ChunkLine* new_chunkline(){
+ChunkLine* new_chunkline() {
     return malloc(sizeof(ChunkLine));
 }
 
-void delete_chunkline(void *cl){
+void delete_chunkline(void *cl) {
     free(cl);
 }
 
-int addr2Index(struct sockaddr_in addr){
+int addr2Index(struct sockaddr_in addr) {
     int i;
     PeerList *pl = &peerlist;
 
@@ -117,8 +122,40 @@ int addr2Index(struct sockaddr_in addr){
         if(pl->peers[i].addr.sin_port == addr.sin_port
                 && pl->peers[i].addr.sin_addr.s_addr == addr.sin_addr.s_addr
           ) {
-          return i;
+            return i;
         }
     }
     return -1;
+}
+
+// iterate each peer in connection and check timeout
+int check_all_timeout() {
+    int i;
+    for (i = 0; i < peerlist.count; i++) {
+        if(! peerlist.peers[i].is_alive )
+            continue;
+
+        if(peerlist.peers[i].is_downloading
+                // and if download timeout
+          )
+        {
+            // stop download activity
+            // stop upload activity for peer i if existed
+            die( &peerlist.peers[i] );
+            // find another one to download
+        }
+        if(peerlist.peers[i].is_uploading
+                // and if upload timeout
+          )
+        {
+            // stop upload activity
+            // stop download activity and find another one to download for peer i if existed
+            die( &peerlist.peers[i] );
+        }
+    }
+
+    // if any unfetched chunk exists, and we do not reach maximum download number.
+    // Then find another one to download (probably we need send whohas)
+
+    return 0;
 }

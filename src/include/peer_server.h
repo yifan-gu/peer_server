@@ -29,5 +29,6 @@ ChunkLine* new_chunkline();
 void delete_chunkline(void *cl);
 
 int addr2Index(struct sockaddr_in addr);
+int check_all_timeout();
 
 #endif // for #ifndef _PEER_SERVER_H

@@ -103,11 +103,13 @@ void process_get(char *chunkfile, char *outputfile) {
 
     printf("PROCESS GET SKELETON CODE CALLED.  Fill me in!  (%s, %s)\n",
            chunkfile, outputfile);
+
     if ( parse_chunk(&getchunks, chunkfile) < 0 ){
         logger(LOG_WARN, "Can't parse chunk file: %s", chunkfile);
         return;
     }
 
+    // send whohas
     PKT_PARAM_CLEAR(&param);
     param.socket = sock;
     //param.p = &peerlist;
@@ -164,6 +166,7 @@ void peer_run(bt_config_t *config) {
         FD_SET(STDIN_FILENO, &readfds);
         FD_SET(sock, &readfds);
 
+        // add timeout (5s)
         nfds = select(sock+1, &readfds, NULL, NULL, NULL);
 
         if (nfds > 0) {
@@ -176,5 +179,6 @@ void peer_run(bt_config_t *config) {
                                    "Currently unused");
             }
         }
+        check_all_timeout();
     }
 }

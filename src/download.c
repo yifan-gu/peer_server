@@ -42,6 +42,7 @@ int find_unfetched_chunk(int p_index) {
     return -1;
 }
 
+<<<<<<< HEAD
 /**
  * init the receiver handler
  * @param dl, the handler
@@ -291,3 +292,11 @@ void dl_dump(download_t *dl, FILE *fp) {
     fprintf(fp, "| next_pkt_expected : %d\n", dl->next_pkt_expected);
     fprintf(fp, "| data_length: %lu\n", dl->data_length);
 }
+=======
+// find another one to download
+//  iterate each peer
+//    if find_unfetched_chunk() return >= 0
+//      get it
+//    else < 0
+//      send whohas
+>>>>>>> c378f0962b987bdeb41a88794dea2b109e8d3448

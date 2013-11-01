@@ -74,6 +74,7 @@ typedef struct download_s {
 
 int find_unfetched_chunk(int);
 
+<<<<<<< HEAD
 /**
  * init the receiver handler
  * @param dl, the handler
@@ -117,5 +118,8 @@ int dl_save_buffer(download_t *dl);
  * @param dl, the handler
  */
 void dl_dump(download_t *dl, FILE *fp);
+=======
+// find another one to download
+>>>>>>> c378f0962b987bdeb41a88794dea2b109e8d3448
 
 #endif // for #ifndef _DOWNLOAD_H
