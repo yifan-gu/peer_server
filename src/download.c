@@ -160,7 +160,7 @@ int dl_recv(download_t *dl, packet_t *pkt) {
     dl->ts = get_timestamp_now();
     dl->timeout_cnt = 0;
 
-    if (offset + GET_DATA_LEN(pkt) >= BT_CHUNK_SIZE) {
+    if (GET_BITMAP_OFFSET(dl, dl->next_pkt_expected) >= BT_CHUNK_SIZE) {
         dl->finished = 1;
     }
 

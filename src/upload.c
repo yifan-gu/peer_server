@@ -129,17 +129,16 @@ int ul_deinit(upload_t *ul) {
  * ul send loss, either timeout or dup-ack
  */
 static void ul_loss(upload_t *ul) {
-    int i;
-    
     ul->ss_threshold = MAX(ul->window_size/2, 2);
     ul->window_size = 1;
     ul->last_pkt_sent = ul->last_pkt_acked;
     ul->status = UL_STATUS_FAST_RETRANSMIT;
+    ul->max_retransmit_seq = ul->max_pkt_sent;
     
-    for (i = ul->last_pkt_acked+1; i <= ul->max_pkt_sent; i++) {
+    /*for (i = ul->last_pkt_acked+1; i <= ul->max_pkt_sent; i++) {
         ul->seq_ts[i] = 0; // make them invalid
         ul->seq_timeout[i] = 0;
-    }
+        }*/
     
     ul->stop_flag = 0;
 
@@ -153,30 +152,44 @@ void ul_handle_ack(upload_t *ul, uint32_t ack) {
     if (ul->finished) {
         return;
     }
-    // TODO if ack == 0
+    // if ack == 0, just restart
+    if (0 == ack) {
+        ul->stop_flag = 0;
+        ul->timeout_cnt = 0;
+        return;
+    }
     
     if ((ack > ul->max_pkt_sent) || (ack <= 0)) {
         logger(LOG_INFO, "invalid ack number");
         return;
     }
 
-    if (UL_STATUS_FAST_RETRANSMIT != ul->status) { // not in retransmisstion
-        if (ul->ack_cnt[ack] == 0) { // do not use dup ack to compute RTT
-            update_rtt(&ul->rtt, &ul->dev, ul->seq_ts[ack]);
-            ul->ack_cnt[ack] = MAX_DUP_SEQ(ul, ack); // take the dup SEQ into account
-        }
+    // update RTT only in SS and CA
+    if ((UL_STATUS_SLOW_START == ul->status)
+        || (UL_STATUS_CONGESTION_AVOIDANCE == ul->status)) {
         
-        if (++ul->ack_cnt[ack] > MAX_DUP_ACK) { // test if dup ack
+        update_rtt(&ul->rtt, &ul->dev, ul->seq_ts[ack]);
+        
+        
+    }
+
+    // take the dup SEQ into account when in retransmission
+    if ((UL_STATUS_FAST_RETRANSMIT_SS == ul->status)
+        || (UL_STATUS_FAST_RETRANSMIT_CA == ul->status)) {
+                ul->ack_cnt[ack] = MAX_DUP_SEQ(ul, ack); 
+    }
+    
+    if ((UL_STATUS_FAST_RETRANSMIT != ul->status)
+        && (++ul->ack_cnt[ack] > MAX_DUP_ACK)) { // test if dup ack
             ul->ack_cnt[ack] = 0;
             ul_loss(ul);
             return;
-        }
     }
 
     if (ack > ul->last_pkt_acked) { // update last_ack and window size
         switch (ul->status) {
         case UL_STATUS_SLOW_START:
-            ul->window_size++;
+            ul->window_size += ack - ul->last_pkt_acked;
             if (ul->window_size > ul->ss_threshold) {
                 ul->window_size = ul->ss_threshold;
                 ul->status = UL_STATUS_CONGESTION_AVOIDANCE;
@@ -185,10 +198,34 @@ void ul_handle_ack(upload_t *ul, uint32_t ack) {
 
         case UL_STATUS_CONGESTION_AVOIDANCE: // update rtt, but not here
             break;
+            
         case UL_STATUS_FAST_RETRANSMIT:
             if (ack >= ul->last_pkt_sent) { // change state to SS after a successful transmission
-                ul->status = UL_STATUS_SLOW_START;
+                ul->status = UL_STATUS_FAST_RETRANSMIT_SS;
+                ul->window_size++;
             }
+            break;
+            
+        case UL_STATUS_FAST_RETRANSMIT_SS:
+            ul->window_size++;
+            if (ack >= ul->max_retransmit_seq) {
+                ul->status = UL_STATUS_SLOW_START;
+                break;
+            }
+            
+            if (ul->window_size > ul->ss_threshold) {
+                ul->window_size = ul->ss_threshold;
+                ul->status = UL_STATUS_FAST_RETRANSMIT_CA;
+            }
+            break;
+
+        case UL_STATUS_FAST_RETRANSMIT_CA:
+            if (ack >= ul->max_retransmit_seq) {
+                ul->status = UL_STATUS_CONGESTION_AVOIDANCE;
+            }
+            break;
+            
+            
             
             /*if (ack >= ul->max_pkt_sent) { // FR finished
                 ul->status = UL_STATUS_SLOW_START;
@@ -234,12 +271,15 @@ int ul_check_timeout(upload_t *ul) {
     now = get_timestamp_now();
     
     /* bootstrap for updating window size in Congestion Avoidance */
-    if ((0 == ul->ca_ts) && (UL_STATUS_CONGESTION_AVOIDANCE == ul->status)) {
+    if ((0 == ul->ca_ts) &&
+        ((UL_STATUS_CONGESTION_AVOIDANCE == ul->status)
+         || (UL_STATUS_FAST_RETRANSMIT_CA == ul->status))) {
         ul->ca_ts = now + ul->rtt;
     }
 
     /* increase window size each RTT in Congestion Avoidance */
-    if ((UL_STATUS_CONGESTION_AVOIDANCE == ul->status)
+    if (((UL_STATUS_CONGESTION_AVOIDANCE == ul->status)
+         || (UL_STATUS_FAST_RETRANSMIT_CA == ul->status))
         && (now > ul->ca_ts)) {
         ul->window_size++;
         ul->ca_ts = now + ul->rtt;
@@ -292,6 +332,12 @@ void ul_dump(upload_t *ul, FILE *fp) {
     case UL_STATUS_FAST_RECOVERY:
         fprintf(fp, "| status: FC\t|\n");
         break;
+    case UL_STATUS_FAST_RETRANSMIT_SS:
+        fprintf(fp, "| status: FR_SS\n");
+        break;
+    case UL_STATUS_FAST_RETRANSMIT_CA:
+        fprintf(fp, "| status: FR_CA\n");
+        break;
     default:
         fprintf(fp, "| status: undefined\t\n");
     }
@@ -301,6 +347,7 @@ void ul_dump(upload_t *ul, FILE *fp) {
     fprintf(fp, "| last_ack: %d\t|\n", ul->last_pkt_acked);
     fprintf(fp, "| last_sent: %d\t\n", ul->last_pkt_sent);
     fprintf(fp, "| max_sent: %d\t\n", ul->max_pkt_sent);
+    fprintf(fp, "| max_retransmit: %d\t\n", ul->max_retransmit_seq);
     fprintf(fp, "| timeout_cnt: %d\n", ul->timeout_cnt);
     fprintf(fp, "| has_index: %d\n", ul->has_index);
     fprintf(fp, "| data: %p\n", ul->data);

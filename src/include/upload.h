@@ -5,6 +5,11 @@
 #include "util.h"
 
 /**
+ * alias
+ */
+
+
+/**
  * the slow-start threshold size
  */
 #define SS_THRESH 64
@@ -19,10 +24,12 @@
 #define MAX_DUP_SEQ(ul, ack) MIN(0, 0 - ((int)(ack) - ((int)(ul)->last_pkt_acked + 1)))
 
 enum ul_status {
-    UL_STATUS_SLOW_START,
-    UL_STATUS_CONGESTION_AVOIDANCE,
-    UL_STATUS_FAST_RETRANSMIT,
-    UL_STATUS_FAST_RECOVERY
+    UL_STATUS_SLOW_START = 0,
+    UL_STATUS_CONGESTION_AVOIDANCE = 1,
+    UL_STATUS_FAST_RETRANSMIT = 2,
+    UL_STATUS_FAST_RETRANSMIT_SS = 3,
+    UL_STATUS_FAST_RETRANSMIT_CA = 4,
+    UL_STATUS_FAST_RECOVERY = 5,
 };
 
 typedef struct upload_s {
@@ -55,10 +62,12 @@ typedef struct upload_s {
     uint32_t last_pkt_acked;
     uint32_t last_pkt_sent;
     uint32_t max_pkt_sent;
+    uint32_t max_retransmit_seq;
     uint32_t rtt;
     uint32_t dev;
     uint32_t rto;
     uint32_t window_size;
+    
     /**
      * the time to update window size
      */
