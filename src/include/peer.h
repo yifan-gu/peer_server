@@ -6,13 +6,12 @@
 
 typedef struct _Peer {
     struct sockaddr_in addr;
-
+    
     int is_alive;
     int is_downloading;
     Download dl;
     int is_uploading;
     Upload ul;
-
 } Peer;
 
 void die(Peer *pr);

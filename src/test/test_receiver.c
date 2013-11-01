@@ -1,22 +1,42 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 #include "packet.h"
 #include "chunk.h"
 #include "peer_server.h"
 #include "peerlist.h"
+#include "input_buffer.h"
 #include "spiffy.h"
 
 extern PeerList peerlist;
 extern ChunkList haschunks;
-
 int sock;
+
+void handle_user_input(char *line, void *cbdata) {
+    uint32_t ack;
+    pkt_param_t param;
+    
+    if (sscanf(line, "%d", &ack)) {
+        PKT_PARAM_CLEAR(&param);
+        param.socket = sock;
+        //param.p = &peerlist;
+        param.p_count = -1;
+        param.c = &haschunks;
+        param.c_count = 0;
+        param.seq = 0;
+        param.ack = ack;
+        param.type = PACKET_TYPE_ACK;
+        send_packet(&param);
+    }
+}
 
 int main(int argc, char *argv[])
 {
     fd_set readfds;
     struct sockaddr_in myaddr;
     bt_config_t config;
+    struct user_iobuf *userbuf;
 
     bt_init(&config, argc, argv);
 
@@ -32,7 +52,12 @@ int main(int argc, char *argv[])
         logger(LOG_ERROR, "Peer init failed!");
         exit(0);
     }
-
+    
+    if ((userbuf = create_userbuf()) == NULL) {
+        perror("peer_run could not allocate userbuf");
+        exit(-1);
+    }
+    
     if ((sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_IP)) == -1) {
         perror("peer_run could not create socket");
         exit(-1);
@@ -50,6 +75,7 @@ int main(int argc, char *argv[])
 
     /* init spiffy */
     spiffy_init(config.identity, (struct sockaddr *) &myaddr, sizeof(myaddr));
+    
     printf("listening...\n");
     
     while (1) {
@@ -60,10 +86,13 @@ int main(int argc, char *argv[])
         
         char buf[PACKET_SIZE];
         packet_t pkt;
+        struct timeval tv;
         
+        FD_SET(STDIN_FILENO, &readfds);
         FD_SET(sock, &readfds);
 
-        nfds = select(sock+1, &readfds, NULL, NULL, NULL);
+        tv.tv_usec = 5000*100;
+        nfds = select(sock+1, &readfds, NULL, NULL, &tv);
 
         if (nfds > 0) {
             if (FD_ISSET(sock, &readfds)) {
@@ -77,7 +106,13 @@ int main(int argc, char *argv[])
                 DECODE_PKT(buf, &pkt, ret);
 
                 printf("recv a packet\n");
-                print_packet(&pkt);
+                //print_packet(&pkt);
+                printf("packet seq: %d\n", GET_SEQ(&pkt));
+            }
+
+            if (FD_ISSET(STDIN_FILENO, &readfds)) {
+                process_user_input(STDIN_FILENO, userbuf, handle_user_input,
+                                   "Currently unused");
             }
         }
     }

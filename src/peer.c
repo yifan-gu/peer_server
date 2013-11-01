@@ -24,6 +24,7 @@
 
 #include <logger.h>
 #include <peer_server.h>
+#include "peerlist.h"
 #include <packet.h>
 #include <parse_packet.h>
 
@@ -37,6 +38,8 @@ void peer_run(bt_config_t *config);
 
 int main(int argc, char **argv) {
 
+    init_log(NULL);
+    
     bt_init(&config, argc, argv);
 
     DPRINTF(DEBUG_INIT, "peer.c main beginning\n");
@@ -61,6 +64,8 @@ int main(int argc, char **argv) {
     }
 
     peer_run(&config);
+    deinit_log();
+    
     return 0;
 }
 
@@ -107,7 +112,7 @@ void process_get(char *chunkfile, char *outputfile) {
     // send whohas
     PKT_PARAM_CLEAR(&param);
     param.socket = sock;
-    param.p = &peerlist;
+    //param.p = &peerlist;
     param.p_count = -1;
     param.c = &getchunks;
     param.c_count = -1;

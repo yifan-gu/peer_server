@@ -2,10 +2,13 @@
 
 #include "packet.h"
 #include "spiffy.h"
+#include "peerlist.h"
 
 #ifdef TESTING_PACKET
 extern void test_message(uint8_t *buf, int i, ChunkList *cl);
 #endif
+
+extern PeerList peerlist;
 
 /**
  * send packets via udp
@@ -35,7 +38,7 @@ static void send_udp(int socket, PeerList *p, int p_index, int p_count, uint8_t 
 void send_packet(pkt_param_t *pp) {
     /* passing argumemts */
     int socket = pp->socket;
-    PeerList *p = pp->p;
+    //PeerList *p = pp->p;
     int p_index = pp->p_index;
     int p_count = pp->p_count;
 
@@ -67,7 +70,7 @@ void send_packet(pkt_param_t *pp) {
 
     /* broadcasts */
     if (p_count < 0) {
-        p_count = p->count;
+        p_count = peerlist.count;
     }
 
     if (c_count < 0) {
@@ -137,7 +140,7 @@ void send_packet(pkt_param_t *pp) {
         test_message(buf, i, c);
         #endif
 
-        send_udp(socket, p, p_index, p_count, buf, len);
+        send_udp(socket, &peerlist, p_index, p_count, buf, len);
     }
 }
 
@@ -185,6 +188,7 @@ void print_packet(packet_t *pkt) {
     printf("| Pkt_len: %d\t|\n", GET_PKT_LEN(pkt));
     printf("| Seq: %u\t|\n", GET_SEQ(pkt));
     printf("| Ack: %u\t|\n", GET_ACK(pkt));
+    printf("| Data_len: %d\t|\n", GET_DATA_LEN(pkt));
 
     if (nondata) {
         printf("| Chunk_cnt: %d\t|\n", GET_CHUNK_CNT(pkt));
@@ -198,7 +202,7 @@ void print_packet(packet_t *pkt) {
         }
     } else {
         if (type == PACKET_TYPE_DATA) {
-            printf("payload: %s\n", GET_PAYLOAD(pkt));
+            printf("payload: %s\n", GET_DATA(pkt));
         }
     }
     

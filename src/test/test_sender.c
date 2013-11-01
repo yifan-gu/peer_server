@@ -5,26 +5,36 @@
 #include "packet.h"
 #include "chunk.h"
 #include "peer_server.h"
+#include "peerlist.h"
 #include "input_buffer.h"
+#include "spiffy.h"
 
 extern PeerList peerlist;
 extern ChunkList haschunks;
 int sock;
 
 void handle_user_input(char *line, void *cbdata) {
-    uint32_t ack;
+    uint32_t seq;
     pkt_param_t param;
+    char data[900];
     
-    if (sscanf(line, "%d", &ack)) {
+    
+    if (sscanf(line, "%d", &seq)) {
+        sprintf(data, "data packet[%d]", seq);
         PKT_PARAM_CLEAR(&param);
         param.socket = sock;
-        param.p = &peerlist;
+        //param.p = &peerlist;
         param.p_count = -1;
         param.c = &haschunks;
         param.c_count = 0;
-        param.seq = 0;
-        param.ack = ack;
-        param.type = PACKET_TYPE_ACK;
+        param.seq = seq;
+        param.ack = 0;
+        param.type = PACKET_TYPE_DATA;
+        param.payload = (uint8_t *)data;
+        /*if (12 == seq) {
+            param.payload_size = 340;
+            } else */
+            param.payload_size = sizeof(data);
         send_packet(&param);
     }
 }
@@ -71,6 +81,9 @@ int main(int argc, char *argv[])
         exit(-1);
     }
 
+    /* init spiffy */
+    spiffy_init(config.identity, (struct sockaddr *) &myaddr, sizeof(myaddr));
+    
     printf("listening...\n");
     
     while (1) {
@@ -89,7 +102,7 @@ int main(int argc, char *argv[])
 
         if (nfds > 0) {
             if (FD_ISSET(sock, &readfds)) {
-                ret = recvfrom(sock, buf, PACKET_SIZE, 0, &addr, &socklen);
+                ret = spiffy_recvfrom(sock, buf, PACKET_SIZE, 0, &addr, &socklen);
 
                 if (ret <= 0) {
                     logger(LOG_ERROR, "recvfrom() error");
@@ -100,7 +113,7 @@ int main(int argc, char *argv[])
 
                 printf("recv a packet\n");
                 //print_packet(&pkt);
-                printf("packet seq: %d\n", GET_SEQ(&pkt));
+                printf("packet ack: %d\n", GET_ACK(&pkt));
             }
 
             if (FD_ISSET(STDIN_FILENO, &readfds)) {

@@ -7,11 +7,12 @@
 @brief
   This log function simulates normal logging system.
  */
+FILE *log_fp;// = stdout;
+
 void log_print(int level, char* filename, int line, char *fmt,...)
 {
-    va_list         list;
-    FILE *log_fp = stdout;
-
+    va_list list;
+    
     switch (level) {
     case LOG_DEBUG:
         fprintf(log_fp,"-DEBUG: ");
@@ -36,4 +37,23 @@ void log_print(int level, char* filename, int line, char *fmt,...)
 
     va_end( list );
     fputc( '\n', log_fp );
+    fflush(log_fp);
+}
+
+int init_log(const char *logfile) {
+    if (NULL == logfile) {
+        log_fp = stdout;
+    } else {
+        log_fp = fopen(logfile, "w+");
+        if (NULL == log_fp) {
+            fprintf(stderr, "open() log error\n");
+            return -1;
+        }
+    }
+
+    return 0;
+}
+
+int deinit_log() {
+    return fclose(log_fp);
 }

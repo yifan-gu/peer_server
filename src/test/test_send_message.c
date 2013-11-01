@@ -4,13 +4,15 @@
 #include "packet.h"
 #include "chunk.h"
 #include "peer_server.h"
+#include "peerlist.h"
+#include "spiffy.h"
 
 extern PeerList peerlist;
 extern ChunkList haschunks;
+int sock;
 
 int main(int argc, char *argv[])
 {
-    int sock;
     struct sockaddr_in myaddr;
     bt_config_t config;
     char *dummy_data = "hello world";
@@ -45,10 +47,13 @@ int main(int argc, char *argv[])
         perror("peer_run could not bind socket");
         exit(-1);
     }
+    
+    /* init spiffy */
+    spiffy_init(config.identity, (struct sockaddr *) &myaddr, sizeof(myaddr));
 
     PKT_PARAM_CLEAR(&param);
     param.socket = sock;
-    param.p = &peerlist;
+    //param.p = &peerlist;
     param.p_count = -1;
     param.c = &haschunks;
     param.c_count = -1;

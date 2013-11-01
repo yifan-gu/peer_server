@@ -11,7 +11,7 @@
 #include "sha.h"
 #include "logger.h"
 #include "peer_server.h"
-#include <peerlist.h>
+//#include "peerlist.h"
 #include "chunk.h"
 
 /**
@@ -35,7 +35,7 @@ uint8_t hash_bin_buf[SHA1_HASH_SIZE];
  */
 #define EXT_HEADER_SIZE(pkt) (HEADER_SIZE - (pkt)->hdr_len)
 #define MAX_PAYLOAD_SIZE (PACKET_SIZE - HEADER_SIZE)
-#define PAYLOAD_SIZE 1000
+#define PAYLOAD_SIZE 1024
 /**
  * Decode / Encode packet from / to buffer
  * @param buf, the raw buf recvfrom peers, it's uint8_t*
@@ -84,8 +84,8 @@ uint8_t hash_bin_buf[SHA1_HASH_SIZE];
 #define GET_ACK(pkt) ((pkt)->ack)
 #define SET_ACK(pkt, v) ((pkt)->ack = (v))
 
-#define GET_PAYLOAD_LEN(pkt) ((pkt)->pkt_len - (pkt)->hdr_len)
-#define GET_PAYLOAD(pkt) ((pkt)->payload + EXT_HEADER_SIZE(pkt))
+#define GET_DATA_LEN(pkt) ((pkt)->pkt_len - (pkt)->hdr_len - EXT_HEADER_SIZE((pkt)))
+#define GET_DATA(pkt) ((pkt)->payload + EXT_HEADER_SIZE(pkt))
 
 /**
  * Get / Set chunk numbers, EXT_HEADER_SIZE is reserved for other implementations
@@ -147,7 +147,7 @@ typedef struct pkt_param_s {
     /**
      * the peerlist, start index and count
      */
-    PeerList *p;
+    //PeerList *p;
     int p_index;
     int p_count;
 

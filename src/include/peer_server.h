@@ -29,6 +29,12 @@ ChunkLine* new_chunkline();
 void delete_chunkline(void *cl);
 
 int addr2Index(struct sockaddr_in addr);
+/**
+ * look up chunk by the hash
+ * @return -1 if not find, otherwise return the index in the chunklist
+ */
+int hash2Index(ChunkList *clist, const char *hash);
+    
 int check_all_timeout();
 
 #endif // for #ifndef _PEER_SERVER_H

@@ -14,6 +14,8 @@
 #define BUFSIZE 50000
 extern PeerList peerlist;
 
+int sock;
+
 void gen_random_data(char *buf, size_t len) {
     int i;
     
@@ -29,7 +31,7 @@ int main(int argc, char *argv[])
 {
     char corrupt_date[BUFSIZE];
 
-    int sock, ret, i;
+    int ret, i;
     struct sockaddr_in myaddr;
     bt_config_t config;
 

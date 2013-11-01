@@ -40,7 +40,7 @@ void parse_ihavechunks(packet_t *pkt, int p_index) {
     param.c = &ihavechunks;
     param.c_count = -1;
 
-    param.p = &peerlist;
+    //param.p = &peerlist;
     param.p_index = p_index;
     param.p_count = param.p_index == -1? -1: 1;
 
@@ -55,7 +55,7 @@ int parse_download(packet_t *pkt, int p_index){
 
     char *hexbuf;
 
-    Download *dl;
+    download_t *dl;
     ChunkLine *cl;
     ll_Node *node;
 
@@ -108,7 +108,7 @@ int send_get(int p_index, int getIndex){
     param.c_index = getIndex;
     param.c_count = 1;
 
-    param.p = &peerlist;
+    //param.p = &peerlist;
     param.p_index = p_index;
     param.p_count = 1;
 
@@ -119,37 +119,76 @@ int send_get(int p_index, int getIndex){
 }
 
 /**
- * send an ack packet to peer[p_index]
- * @param p_index, the index of the pper
- * @param ack, the ack number
+ * start download
  */
-int send_ack(int p_index, int ack) {
-    pkt_param_t param;
-
-    PKT_PARAM_CLEAR(&param);
-
-    param.socket = sock;
-    param.p = &peerlist;
-    param.p_index = p_index;
-    param.p_count = 1;
-    param.ack = ack;
-    param.type = PACKET_TYPE_ACK;
-    
-    send_packet(&param);
-
-    return 0;
-    
+int start_download(Download *dl, int p_index, int get_index, const char *filename) {
+    return dl_init(dl, p_index, get_index, filename);
 }
 
 /**
- * parse the ack packet from peer[p_index]
- * @param pkt, the packet
- * @param p_index, the peer index
+ * update download info when get a DATA
  */
-int parse_ack(packet_t *pkt, int p_index) {
-    uint32_t ack = GET_ACK(pkt);
-    printf("ack: %d\n", ack);
+int update_download(Download *dl, packet_t *pkt) {
+    return dl_recv(dl, pkt);
+}
 
-    //tcp_handle_ack(tcp, ack);
+/**
+ * finish download
+ */
+int finish_download(Download *dl) {
+    return dl_finish(dl);
+}
+
+/**
+ * kill download
+ */
+int kill_download(Download *dl) {
     return 0;
 }
+
+/**
+ * check if download is OK
+ * @return 1 if finished, 0 if not, -1 if hash is not correct
+ */
+int is_download_finished(Download *ul) {
+    if (!ul->finished) {
+        return 0;
+    }
+
+    if (dl_check_hash() == 0) {
+        return 1;
+    } else {
+        return -1;
+    }
+}
+
+/**
+ * start the upload
+ */
+int start_upload(Upload *ul, int p_index, int has_index) {
+    return ul_init(ul, p_index, has_index);
+}
+
+/**
+ * update upload info when get an ACK
+ */
+int update_upload(Upload *ul, packet_t *pkt) {
+    ul_handle_ack(ul, GET_ACK(pkt));
+    return 0;
+}
+
+/**
+ * check if upload is finished
+ */
+int is_upload_finished(Upload *ul) {
+    return ul->finished;
+}
+
+/**
+ * finish upload
+ */
+int finish_upload(Upload *ul) {
+    return ul_deinit(ul);
+}
+
+
