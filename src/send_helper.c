@@ -119,14 +119,76 @@ int send_get(int p_index, int getIndex){
 }
 
 /**
- * parse the ack packet from peer[p_index]
- * @param pkt, the packet
- * @param p_index, the peer index
+ * start download
  */
-int parse_ack(packet_t *pkt, int p_index) {
-    uint32_t ack = GET_ACK(pkt);
-    printf("ack: %d\n", ack);
+int start_download(Download *dl, int p_index, int get_index, const char *filename) {
+    return dl_init(dl, p_index, get_index, filename);
+}
 
-    //tcp_handle_ack(tcp, ack);
+/**
+ * update download info when get a DATA
+ */
+int update_download(Download *dl, packet_t *pkt) {
+    return dl_recv(dl, pkt);
+}
+
+/**
+ * finish download
+ */
+int finish_download(Download *dl) {
+    return dl_finish(dl);
+}
+
+/**
+ * kill download
+ */
+int kill_download(Download *dl) {
     return 0;
 }
+
+/**
+ * check if download is OK
+ * @return 1 if finished, 0 if not, -1 if hash is not correct
+ */
+int is_download_finished(Download *ul) {
+    if (!ul->finished) {
+        return 0;
+    }
+
+    if (dl_check_hash() == 0) {
+        return 1;
+    } else {
+        return -1;
+    }
+}
+
+/**
+ * start the upload
+ */
+int start_upload(Upload *ul, int p_index, int has_index) {
+    return ul_init(ul, p_index, has_index);
+}
+
+/**
+ * update upload info when get an ACK
+ */
+int update_upload(Upload *ul, packet_t *pkt) {
+    ul_handle_ack(ul, GET_ACK(pkt));
+    return 0;
+}
+
+/**
+ * check if upload is finished
+ */
+int is_upload_finished(Upload *ul) {
+    return ul->finished;
+}
+
+/**
+ * finish upload
+ */
+int finish_upload(Upload *ul) {
+    return ul_deinit(ul);
+}
+
+

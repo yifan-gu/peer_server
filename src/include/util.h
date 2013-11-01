@@ -17,6 +17,6 @@ void update_rtt(uint32_t *rtt, uint32_t *dev, uint32_t ts);
 /**
  * get current timestamp
  */
-uint32_t get_timestamp_now();
+uint32_t get_timestamp_now(void);
 
 #endif

@@ -23,7 +23,7 @@ OBJS = $(patsubst %,$(ODIR)/%,$(_OBJS))
 _MK_CHUNK_OBJS   = make_chunks.o chunk.o sha.o
 MK_CHUNK_OBJS = $(patsubst %,$(ODIR)/%,$(_MK_CHUNK_OBJS))
 
-_TEST_OBJS   = logger.o peer_server.o peerlist.o chunk.o sha.o packet.o linkedlist.o \
+_TEST_OBJS   = logger.o peer_server.o peerlist.o chunk.o sha.o packet.o linkedlist.o send_helper.o \
 		bt_parse.o debug.o download.o spiffy.o util.o upload.o
 TEST_OBJS = $(patsubst %,$(ODIR)/%,$(_TEST_OBJS))
 

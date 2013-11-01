@@ -72,9 +72,13 @@ typedef struct download_s {
     size_t data_length;
 }download_t;
 
+/**
+ * alias
+ */
+typedef download_t Download;
+
 int find_unfetched_chunk(int);
 
-<<<<<<< HEAD
 /**
  * init the receiver handler
  * @param dl, the handler
@@ -101,6 +105,12 @@ int dl_recv(download_t *dl, packet_t *pkt);
 int dl_check_timeout(download_t *dl);
 
 /**
+ * check the hach
+ * @return 0 on success, -1 if the hash not equal
+ */
+int dl_check_hash(void);
+
+/**
  * a wrapper for finishing the downloading
  * @param dl, the handler
  * @return 0 on success, 1 if check_hash fails, -1 if other IO fails
@@ -118,8 +128,5 @@ int dl_save_buffer(download_t *dl);
  * @param dl, the handler
  */
 void dl_dump(download_t *dl, FILE *fp);
-=======
-// find another one to download
->>>>>>> c378f0962b987bdeb41a88794dea2b109e8d3448
 
 #endif // for #ifndef _DOWNLOAD_H

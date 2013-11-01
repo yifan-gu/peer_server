@@ -108,7 +108,7 @@ int ul_send(upload_t *ul) {
 int ul_init(upload_t *ul, int p_index, int has_index) {
     memset(ul, 0, sizeof(upload_t));
 
-    ul->window_size = 8; // TODO: change to 1 for ss
+    ul->window_size = 1;
     ul->p_index = p_index;
     ul->has_index = has_index;
     ul->ss_threshold = SS_THRESH;
@@ -134,12 +134,6 @@ static void ul_loss(upload_t *ul) {
     ul->last_pkt_sent = ul->last_pkt_acked;
     ul->status = UL_STATUS_FAST_RETRANSMIT;
     ul->max_retransmit_seq = ul->max_pkt_sent;
-    
-    /*for (i = ul->last_pkt_acked+1; i <= ul->max_pkt_sent; i++) {
-        ul->seq_ts[i] = 0; // make them invalid
-        ul->seq_timeout[i] = 0;
-        }*/
-    
     ul->stop_flag = 0;
 
     return;
@@ -167,19 +161,17 @@ void ul_handle_ack(upload_t *ul, uint32_t ack) {
     // update RTT only in SS and CA
     if ((UL_STATUS_SLOW_START == ul->status)
         || (UL_STATUS_CONGESTION_AVOIDANCE == ul->status)) {
-        
         update_rtt(&ul->rtt, &ul->dev, ul->seq_ts[ack]);
-        
-        
     }
 
     // take the dup SEQ into account when in retransmission
     if ((UL_STATUS_FAST_RETRANSMIT_SS == ul->status)
         || (UL_STATUS_FAST_RETRANSMIT_CA == ul->status)) {
-                ul->ack_cnt[ack] = MAX_DUP_SEQ(ul, ack); 
+        ul->ack_cnt[ack] = MAX_DUP_SEQ(ul, ack); 
     }
-    
-    if ((UL_STATUS_FAST_RETRANSMIT != ul->status)
+
+    // only count dup ack for NON-FR state
+    if ((UL_STATUS_FAST_RETRANSMIT != ul->status) 
         && (++ul->ack_cnt[ack] > MAX_DUP_ACK)) { // test if dup ack
             ul->ack_cnt[ack] = 0;
             ul_loss(ul);
@@ -205,10 +197,14 @@ void ul_handle_ack(upload_t *ul, uint32_t ack) {
                 ul->window_size++;
             }
             break;
-            
+
+            /*
+             * since SS in retransmission is different with real SS, we made it
+             * a different state, the same thing happen with CA
+             */
         case UL_STATUS_FAST_RETRANSMIT_SS:
             ul->window_size++;
-            if (ack >= ul->max_retransmit_seq) {
+            if (ack >= ul->max_retransmit_seq) { // exit FR state
                 ul->status = UL_STATUS_SLOW_START;
                 break;
             }
@@ -220,23 +216,10 @@ void ul_handle_ack(upload_t *ul, uint32_t ack) {
             break;
 
         case UL_STATUS_FAST_RETRANSMIT_CA:
-            if (ack >= ul->max_retransmit_seq) {
+            if (ack >= ul->max_retransmit_seq) { // exit FR state
                 ul->status = UL_STATUS_CONGESTION_AVOIDANCE;
             }
             break;
-            
-            
-            
-            /*if (ack >= ul->max_pkt_sent) { // FR finished
-                ul->status = UL_STATUS_SLOW_START;
-            } else if (ul->window_size > ul->ss_threshold) {
-                ul->window_size = ul->ss_threshold;
-                ul->status = UL_STATUS_CONGESTION_AVOIDANCE;
-            } else {
-                ul->window_size++;
-                }*/
-            
-            
         }
 
         if (ul->last_pkt_sent < ack) { // do not retransmit those already received packets

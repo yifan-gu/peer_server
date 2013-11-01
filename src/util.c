@@ -7,7 +7,7 @@
 /**
  * get current timestamp
  */
-uint32_t get_timestamp_now() {
+uint32_t get_timestamp_now(void) {
     struct timeval tv;
     
     if (gettimeofday(&tv, NULL) < 0) {

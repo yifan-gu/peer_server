@@ -4,6 +4,7 @@
 #include <peerlist.h>
 
 #include <logger.h>
+#include "send_helper.h"
 
 #define BUFFER 256
 
@@ -131,24 +132,37 @@ int addr2Index(struct sockaddr_in addr) {
 // iterate each peer in connection and check timeout
 int check_all_timeout() {
     int i;
+    Peer *peer_p;
+    
     for (i = 0; i < peerlist.count; i++) {
-        if(! peerlist.peers[i].is_alive )
+        peer_p = &peerlist.peers[i];
+        if(! peer_p->is_alive )
             continue;
 
-        if(peerlist.peers[i].is_downloading
-                // and if download timeout
+        if(peer_p->is_downloading
+           && dl_check_timeout(&peer_p->dl) > 3
+           // and if download timeout
           )
         {
             // stop download activity
             // stop upload activity for peer i if existed
+            if (peer_p->is_uploading) {
+                kill_upload(&peer_p->ul);
+            }
+            
             die( &peerlist.peers[i] );
             // find another one to download
         }
-        if(peerlist.peers[i].is_uploading
+        if(peer_p->is_uploading
+           && ul_check_timeout(&peer_p->ul) > 3
                 // and if upload timeout
           )
         {
             // stop upload activity
+            kill_upload(&peer_p->ul);
+            if (peer_p->is_downloading) {
+                kill_download(&peer_p->dl);
+            }
             // stop download activity and find another one to download for peer i if existed
             die( &peerlist.peers[i] );
         }
@@ -158,4 +172,20 @@ int check_all_timeout() {
     // Then find another one to download (probably we need send whohas)
 
     return 0;
+}
+
+/**
+ * look up chunk by the hash
+ * @return -1 if not find, otherwise return the index in the chunklist
+ */
+int hash2Index(ChunkList *clist, const char *hash) {
+    int i;
+
+    for (i = 0; i < clist->count; i++) {
+        if (0 == strcmp(clist->chunks[i].sha1, hash)) {
+            return i;
+        }
+    }
+
+    return -1;
 }

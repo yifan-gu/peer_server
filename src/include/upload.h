@@ -5,11 +5,6 @@
 #include "util.h"
 
 /**
- * alias
- */
-
-
-/**
  * the slow-start threshold size
  */
 #define SS_THRESH 64
@@ -86,6 +81,11 @@ typedef struct upload_s {
     int stop_flag;
     int finished;
 }upload_t;
+
+/**
+ * alias
+ */
+typedef upload_t Upload;
 
 /**
  * send the packet within the window

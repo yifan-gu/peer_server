@@ -42,7 +42,6 @@ int find_unfetched_chunk(int p_index) {
     return -1;
 }
 
-<<<<<<< HEAD
 /**
  * init the receiver handler
  * @param dl, the handler
@@ -257,7 +256,7 @@ WRITE_LOOP:
  * check the hach
  * @return 0 on success, -1 if the hash not equal
  */
-int check_hash() {
+int dl_check_hash(void) {
     return 0;
 }
 
@@ -267,10 +266,6 @@ int check_hash() {
  * @return 0 on success, 1 if check_hash fails, -1 if other IO fails
  */
 int dl_finish(download_t *dl) {
-    if (0 != check_hash()) {
-        return 1;
-    }
-
     return dl_save_buffer(dl);
 }
 
@@ -292,11 +287,3 @@ void dl_dump(download_t *dl, FILE *fp) {
     fprintf(fp, "| next_pkt_expected : %d\n", dl->next_pkt_expected);
     fprintf(fp, "| data_length: %lu\n", dl->data_length);
 }
-=======
-// find another one to download
-//  iterate each peer
-//    if find_unfetched_chunk() return >= 0
-//      get it
-//    else < 0
-//      send whohas
->>>>>>> c378f0962b987bdeb41a88794dea2b109e8d3448
