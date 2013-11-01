@@ -11,7 +11,7 @@
 #include "sha.h"
 #include "logger.h"
 #include "peer_server.h"
-#include <peerlist.h>
+//#include "peerlist.h"
 #include "chunk.h"
 
 /**
@@ -147,7 +147,7 @@ typedef struct pkt_param_s {
     /**
      * the peerlist, start index and count
      */
-    PeerList *p;
+    //PeerList *p;
     int p_index;
     int p_count;
 

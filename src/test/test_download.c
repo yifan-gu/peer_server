@@ -4,13 +4,18 @@
 #include <sys/time.h>
 
 #include "packet.h"
-#include "tcp_recv.h"
+#include "download.h"
 #include "chunk.h"
 #include "peer_server.h"
+#include "peerlist.h"
 #include "spiffy.h"
+#include "logger.h"
+
 
 extern PeerList peerlist;
 extern ChunkList haschunks;
+extern FILE *log_fp;
+
 int sock;
 
 void handle_user_input(char *line, void *cbdata) {
@@ -20,7 +25,7 @@ void handle_user_input(char *line, void *cbdata) {
     if (sscanf(line, "%d", &ack)) {
         PKT_PARAM_CLEAR(&param);
         param.socket = sock;
-        param.p = &peerlist;
+        //param.p = &peerlist;
         param.p_count = -1;
         param.c = &haschunks;
         param.c_count = 0;
@@ -36,8 +41,10 @@ int main(int argc, char *argv[])
     fd_set readfds;
     struct sockaddr_in myaddr;
     bt_config_t config;
-    tcp_recv_t tcp;
+    download_t dl;
 
+    init_log("download.log");
+    
     bt_init(&config, argc, argv);
 
 #ifdef TESTING
@@ -74,8 +81,8 @@ int main(int argc, char *argv[])
     printf("listening...\n");
     
     int index = 1; // the peer's index in the peerlist
-    if (init_tcp_recv(&tcp, index, 0, "test.log") < 0) {
-        logger(LOG_ERROR, "tcp init failed");
+    if (dl_init(&dl, index, 0, "test.log") < 0) {
+        logger(LOG_ERROR, "dl init failed");
         return -1;
     }
 
@@ -91,33 +98,36 @@ int main(int argc, char *argv[])
         packet_t pkt;
         
         FD_SET(sock, &readfds);
-        
+
+        tv.tv_usec = 500 * 1000;
         nfds = select(sock+1, &readfds, NULL, NULL, &tv);
         
         if (nfds > 0) {
             if (FD_ISSET(sock, &readfds)) {
+                printf("receive\n");
                 ret = spiffy_recvfrom(sock, buf, PACKET_SIZE, 0, &addr, &socklen);
 
                 if (ret <= 0) {
                     logger(LOG_ERROR, "recvfrom() error");
                     continue;
                 }
-
+                printf("decode\n");
                 DECODE_PKT(buf, &pkt, ret);
-
-                //printf("recv a packet\n");
+                
+                printf("recv a packet\n");
                 //print_packet(&pkt);
                 logger(LOG_DEBUG, "recv seq: %d\n", GET_SEQ(&pkt));
                 printf("%d circle\n", ++i);
-                dump_tcp_recv(&tcp);
+                dl_dump(&dl, log_fp);
 
-                recv_tcp(&tcp, &pkt);
+                printf("handle\n");
+                dl_recv(&dl, &pkt);
             }
 
         }
 
         
-        tcp_recv_timer(&tcp);
+        dl_check_timeout(&dl);
         
         //sleep(1);
         //gettimeofday(&ts, NULL);
@@ -127,13 +137,15 @@ int main(int argc, char *argv[])
         //printf("sleep for: %dms\n", sleeptime);
         //usleep(sleeptime * 1000);
 
-        if (tcp.finished) {
+        if (dl.finished) {
             printf("finished\n");
             break;
         }
     }
 
-    save_buffer(&tcp);
+    dl_save_buffer(&dl);
+
+    deinit_log();
     
     return 0;
 }

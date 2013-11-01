@@ -12,25 +12,25 @@ TESTDEFS	= -DTESTING			# comment this out to disable debugging code
 
 _HEADERS = bt_parse.h  chunk.h  debug.h  debug-text.h  input_buffer.h  sha.h  spiffy.h \
 		   logger.h  packet.h peer_server.h peerlist.h download.h upload.h linkedlist.h \
-		   parse_packet.h peer.h send_helper.h tcp_util.h tcp_send.h tcp_recv.h
+		   parse_packet.h peer.h send_helper.h util.h #tcp_send.h download.h
 HEADERS = $(patsubst %,$(IDIR)/%,$(_HEADERS))
 
 _OBJS = peer.o bt_parse.o spiffy.o debug.o input_buffer.o chunk.o sha.o \
 		logger.o peer_server.o peerlist.o download.o upload.o linkedlist.o packet.o \
-		parse_packet.o send_helper.o tcp_util.o tcp_send.o tcp_recv.o
+		parse_packet.o send_helper.o util.o #tcp_send.o download.o
 OBJS = $(patsubst %,$(ODIR)/%,$(_OBJS))
 
 _MK_CHUNK_OBJS   = make_chunks.o chunk.o sha.o
 MK_CHUNK_OBJS = $(patsubst %,$(ODIR)/%,$(_MK_CHUNK_OBJS))
 
 _TEST_OBJS   = logger.o peer_server.o peerlist.o chunk.o sha.o packet.o linkedlist.o \
-		bt_parse.o debug.o download.o spiffy.o tcp_util.o
+		bt_parse.o debug.o download.o spiffy.o util.o upload.o
 TEST_OBJS = $(patsubst %,$(ODIR)/%,$(_TEST_OBJS))
 
 BINS = peer make-chunks
 
-TESTBINS = test_packet test_send_message test_recv_message test_send_corrupt test_tcp_send test_receiver \
-	test_tcp_recv test_sender
+TESTBINS = test_packet test_send_message test_recv_message test_send_corrupt test_upload test_receiver \
+	test_download test_sender
 
 # Explit build and testing targets
 all: ${BINS}
@@ -66,14 +66,14 @@ test_recv_message: $(TEST_OBJS) $(TESTDIR)/test_recv_message.o
 test_send_corrupt: $(TEST_OBJS) $(TESTDIR)/test_send_corrupt.o
 	$(CC) -DDEBUG $(TEST_OBJS) $(TESTDIR)/test_send_corrupt.o -o $(TESTBINDIR)/test_send_corrupt $(LDFLAGS)
 
-test_tcp_send: $(TEST_OBJS) $(TESTDIR)/test_tcp_send.o $(ODIR)/tcp_send.o
-	$(CC) -DDEBUG $(TEST_OBJS) $(TESTDIR)/test_tcp_send.o $(ODIR)/tcp_send.o -o $(TESTBINDIR)/test_tcp_send $(LDFLAGS)
+test_upload: $(TEST_OBJS) $(TESTDIR)/test_upload.o
+	$(CC) -DDEBUG $(TEST_OBJS) $(TESTDIR)/test_upload.o -o $(TESTBINDIR)/test_upload $(LDFLAGS)
 
-test_receiver: $(TEST_OBJS) $(TESTDIR)/test_receiver.o $(ODIR)/tcp_send.o $(ODIR)/input_buffer.o
-	$(CC) -DDEBUG $(TEST_OBJS) $(TESTDIR)/test_receiver.o $(ODIR)/input_buffer.o $(ODIR)/tcp_send.o -o $(TESTBINDIR)/test_receiver $(LDFLAGS)
+test_receiver: $(TEST_OBJS) $(TESTDIR)/test_receiver.o $(ODIR)/input_buffer.o
+	$(CC) -DDEBUG $(TEST_OBJS) $(TESTDIR)/test_receiver.o $(ODIR)/input_buffer.o -o $(TESTBINDIR)/test_receiver $(LDFLAGS)
 
-test_tcp_recv: $(TEST_OBJS) $(TESTDIR)/test_tcp_recv.o $(ODIR)/tcp_recv.o
-	$(CC) -DDEBUG $(TEST_OBJS) $(TESTDIR)/test_tcp_recv.o $(ODIR)/tcp_recv.o -o $(TESTBINDIR)/test_tcp_recv $(LDFLAGS)
+test_download: $(TEST_OBJS) $(TESTDIR)/test_download.o
+	$(CC) -DDEBUG $(TEST_OBJS) $(TESTDIR)/test_download.o -o $(TESTBINDIR)/test_download $(LDFLAGS)
 
-test_sender: $(TEST_OBJS) $(TESTDIR)/test_sender.o $(ODIR)/tcp_recv.o $(ODIR)/input_buffer.o
-	$(CC) -DDEBUG $(TEST_OBJS) $(TESTDIR)/test_sender.o $(ODIR)/input_buffer.o $(ODIR)/tcp_recv.o -o $(TESTBINDIR)/test_sender $(LDFLAGS)
+test_sender: $(TEST_OBJS) $(TESTDIR)/test_sender.o $(ODIR)/input_buffer.o
+	$(CC) -DDEBUG $(TEST_OBJS) $(TESTDIR)/test_sender.o $(ODIR)/input_buffer.o  -o $(TESTBINDIR)/test_sender $(LDFLAGS)

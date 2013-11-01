@@ -6,14 +6,17 @@
 #include <unistd.h>
 #include <sys/time.h>
 
-#include "tcp_send.h"
+#include "upload.h"
 #include "packet.h"
 #include "chunk.h"
 #include "peer_server.h"
+#include "peerlist.h"
 #include "spiffy.h"
+#include "logger.h"
 
 extern PeerList peerlist;
 extern ChunkList haschunks;
+extern FILE *log_fp;
 
 bt_config_t config;
 int sock;
@@ -23,11 +26,12 @@ int main(int argc, char *argv[])
     fd_set readfds;
     struct sockaddr_in myaddr;
     //char *dummy_data = "hello world";
-    tcp_send_t tcp;
+    upload_t ul;
+
+    init_log("upload.log");
     
     bt_init(&config, argc, argv);
     
-
 #ifdef TESTING
     config.identity = 1; // your group number here
     strcpy(config.chunk_file, "chunkfile");
@@ -61,8 +65,8 @@ int main(int argc, char *argv[])
     spiffy_init(config.identity, (struct sockaddr *) &myaddr, sizeof(myaddr));
     
     int index = 1; // the peer's index in the peerlist
-    if (init_tcp_send(&tcp, index, 0) < 0) {
-        logger(LOG_ERROR, "tcp init failed");
+    if (ul_init(&ul, index, 0) < 0) {
+        logger(LOG_ERROR, "ul init failed");
         return -1;
     }
 
@@ -78,6 +82,7 @@ int main(int argc, char *argv[])
         packet_t pkt;
         
         FD_SET(sock, &readfds);
+        tv.tv_usec = 5000*100;
         nfds = select(sock+1, &readfds, NULL, NULL, &tv);
 
         if (nfds > 0) {
@@ -93,16 +98,16 @@ int main(int argc, char *argv[])
                 if (PACKET_TYPE_ACK == GET_TYPE(&pkt)) {
                     logger(LOG_DEBUG, "recv an ack: %d\n", GET_ACK(&pkt));
                     printf("%d circle\n", ++i);
-                    dump_tcp_send(&tcp);
+                    ul_dump(&ul, log_fp);
 
-                    tcp_handle_ack(&tcp, GET_ACK(&pkt));
+                    ul_handle_ack(&ul, GET_ACK(&pkt));
                 }
             }
         }
 
         //printf("%d circle\n", ++i);
-        tcp_send_timer(&tcp);
-        send_tcp(&tcp);
+        ul_check_timeout(&ul);
+        ul_send(&ul);
         
         //sleep(1);
         //gettimeofday(&ts, NULL);
@@ -112,17 +117,19 @@ int main(int argc, char *argv[])
         //printf("sleep for: %dms\n", sleeptime);
         //usleep(sleeptime * 1000);
 
-        if (tcp.finished) {
+        if (ul.finished) {
             printf("finished!\n");
             break;
         }
     }
 
-    if (deinit_tcp_send(&tcp) < 0) {
+    if (ul_deinit(&ul) < 0) {
         logger(LOG_ERROR, "deinit failed");
         perror("");
         return -1;
     }
+
+    deinit_log();
     
     return 0;
 }

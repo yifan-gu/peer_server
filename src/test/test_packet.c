@@ -5,6 +5,8 @@
 #include "chunk.h"
 #include "peer_server.h"
 
+int sock = 0;
+
 void check_pkt_header(packet_t *pkt, uint8_t type,
                       uint16_t hdr_len, uint16_t pkt_len, uint32_t seq, uint32_t ack, uint8_t cnt) {
     assert(pkt->magic == MAGIC);

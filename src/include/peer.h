@@ -7,7 +7,7 @@
 typedef struct _Peer {
   struct sockaddr_in addr;
 
-  Download dl;
-  Upload ul;
+  download_t dl;
+  upload_t ul;
 
 } Peer;

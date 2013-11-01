@@ -38,7 +38,7 @@ void parse_ihavechunks(packet_t *pkt, int p_index) {
     param.c = &ihavechunks;
     param.c_count = -1;
 
-    param.p = &peerlist;
+    //param.p = &peerlist;
     param.p_index = p_index;
     param.p_count = param.p_index == -1? -1: 1;
 
@@ -53,7 +53,7 @@ int parse_download(packet_t *pkt, int p_index){
 
     char *hexbuf;
 
-    Download *dl;
+    download_t *dl;
     ChunkLine *cl;
     ll_Node *node;
 
@@ -105,7 +105,7 @@ int send_get(int p_index, int getIndex){
     param.c_index = getIndex;
     param.c_count = 1;
 
-    param.p = &peerlist;
+    //param.p = &peerlist;
     param.p_index = p_index;
     param.p_count = 1;
 

@@ -5,7 +5,9 @@
 #include "packet.h"
 #include "chunk.h"
 #include "peer_server.h"
+#include "peerlist.h"
 #include "input_buffer.h"
+#include "spiffy.h"
 
 extern PeerList peerlist;
 extern ChunkList haschunks;
@@ -21,7 +23,7 @@ void handle_user_input(char *line, void *cbdata) {
         sprintf(data, "data packet[%d]", seq);
         PKT_PARAM_CLEAR(&param);
         param.socket = sock;
-        param.p = &peerlist;
+        //param.p = &peerlist;
         param.p_count = -1;
         param.c = &haschunks;
         param.c_count = 0;
@@ -79,6 +81,9 @@ int main(int argc, char *argv[])
         exit(-1);
     }
 
+    /* init spiffy */
+    spiffy_init(config.identity, (struct sockaddr *) &myaddr, sizeof(myaddr));
+    
     printf("listening...\n");
     
     while (1) {
@@ -97,7 +102,7 @@ int main(int argc, char *argv[])
 
         if (nfds > 0) {
             if (FD_ISSET(sock, &readfds)) {
-                ret = recvfrom(sock, buf, PACKET_SIZE, 0, &addr, &socklen);
+                ret = spiffy_recvfrom(sock, buf, PACKET_SIZE, 0, &addr, &socklen);
 
                 if (ret <= 0) {
                     logger(LOG_ERROR, "recvfrom() error");

@@ -1,12 +1,14 @@
-#ifndef _UTIL_H
-#define _UTIL_H
+#ifndef _TCP_UTIL_H
+#define _TCP_UTIL_H
 
 #include <inttypes.h>
 
 #define DEFAULT_TIMEOUT (10 * 1000) // milliseconds
 
-#define GET_RTO(ptr) ((ptr)->rtt + 4 * (ptr)->dev)
+#define GET_RTO(tcp) (2 * (tcp)->rtt)// + 1 * (tcp)->dev)
 
+#define MAX(a, b) ((a) > (b) ? (a) : (b))
+#define MIN(a, b) ((a) < (b) ? (a) : (b))
 /**
  * update the round-trip time, and deviation
  */

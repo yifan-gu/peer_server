@@ -20,4 +20,8 @@
 
 void log_print(int level, char* filename, int line, char *fmt,...);
 
+int init_log(const char *logfile);
+
+int deinit_log();
+
 #endif // for #ifndef _LOGGER_H

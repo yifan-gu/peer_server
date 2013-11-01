@@ -4,14 +4,16 @@
 #include "packet.h"
 #include "chunk.h"
 #include "peer_server.h"
+#include "peerlist.h"
 #include "spiffy.h"
 
 extern PeerList peerlist;
 extern ChunkList haschunks;
 
+int sock;
+
 int main(int argc, char *argv[])
 {
-    int sock;
     fd_set readfds;
     struct sockaddr_in myaddr;
     bt_config_t config;
