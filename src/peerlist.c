@@ -6,7 +6,7 @@ int init_peer(Peer *pr){
     pr->is_alive = 0;
     pr->is_downloading = 0;
     pr->is_uploading = 0;
-    //init_download(& pr->dl);
+    init_linkedlist(&pr->hasqueue);
     return 0;
 }
 

@@ -2,6 +2,7 @@
 #include "packet.h"
 #include "bt_parse.h"
 #include "logger.h"
+#include "peer_server.h"
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -10,11 +11,7 @@
 #include <stdlib.h>
 #include <fcntl.h>
 
-extern int sock;
-extern bt_config_t config;
-extern ChunkList haschunks;
-//extern PeerList peerlist;
-extern FILE *master_chunk;
+extern PeerServer psvr;
 
 /**
  * get the data from chunk file
@@ -26,7 +23,8 @@ static int load_data(upload_t *ul) {
     
     /* mmap */
     addr =  mmap(NULL, BT_CHUNK_SIZE, PROT_READ, MAP_SHARED,
-                 fileno(master_chunk), GET_CHUNK_OFFSET(ul->has_index, haschunks));
+                 fileno(psvr.master_chunk),
+                 GET_CHUNK_OFFSET(ul->has_index, psvr.haschunks));
     if (MAP_FAILED == addr) {
         logger(LOG_ERROR, "mmap() failed");
         perror("");
@@ -63,7 +61,7 @@ int ul_send(upload_t *ul) {
     
     /* make a packet */
     PKT_PARAM_CLEAR(&param);
-    param.socket = sock;
+    param.socket = psvr.sock;
     //param.p = &peerlist;
     param.p_index = ul->p_index;
     param.p_count = 1;
@@ -106,7 +104,6 @@ int ul_send(upload_t *ul) {
  * init the upload_t struct
  */
 int ul_init(upload_t *ul, int p_index, int has_index) {
-    memset(ul, 0, sizeof(upload_t));
 
     ul->window_size = 1;
     ul->p_index = p_index;

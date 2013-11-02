@@ -3,12 +3,13 @@
 #include "packet.h"
 #include "spiffy.h"
 #include "peerlist.h"
+#include <peer_server.h>
 
 #ifdef TESTING_PACKET
 extern void test_message(uint8_t *buf, int i, ChunkList *cl);
 #endif
 
-extern PeerList peerlist;
+extern PeerServer psvr;
 
 /**
  * send packets via udp
@@ -70,7 +71,7 @@ void send_packet(pkt_param_t *pp) {
 
     /* broadcasts */
     if (p_count < 0) {
-        p_count = peerlist.count;
+        p_count = psvr.peerlist.count;
     }
 
     if (c_count < 0) {
@@ -140,7 +141,7 @@ void send_packet(pkt_param_t *pp) {
         test_message(buf, i, c);
         #endif
 
-        send_udp(socket, &peerlist, p_index, p_count, buf, len);
+        send_udp(socket, &psvr.peerlist, p_index, p_count, buf, len);
     }
 }
 
@@ -150,15 +151,11 @@ void send_packet(pkt_param_t *pp) {
  * @return 1 if valid, 0 if not
  */
 int valid_packet(packet_t *pkt) {
-    if (GET_MAGIC(pkt) != MAGIC) {
+    if ( GET_MAGIC(pkt) != MAGIC) {
         return 0;
     }
 
     if (GET_VERSION(pkt) != VERSION) {
-        return 0;
-    }
-
-    if (GET_TYPE(pkt) > PACKET_TYPE_DENIED) {
         return 0;
     }
 

@@ -6,7 +6,9 @@
 
 typedef struct _Peer {
     struct sockaddr_in addr;
-    
+
+    Linlist hasqueue;
+
     int is_alive;
     int is_downloading;
     Download dl;

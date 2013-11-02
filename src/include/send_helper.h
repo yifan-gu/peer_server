@@ -2,7 +2,8 @@
 #define _SEND_HELPER_H
 
 
-void parse_ihavechunks(packet_t *pkt, int);
+void send_whohas();
+void send_ihave(packet_t *pkt, int);
 int parse_download(packet_t *pkt, int);
 int send_get(int, int getIndex);
 
@@ -31,7 +32,10 @@ int kill_download(Download *dl);
  * @return 1 if finished, 0 if not, -1 if hash is not correct
  */
 int is_download_finished(Download *ul);
-    
+
+int check_hash_succeed(Download *dl);
+int write_to_file(Download *dl);
+
 /**
  * start the upload
  */

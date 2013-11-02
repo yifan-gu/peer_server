@@ -9,38 +9,9 @@
 #include "peerlist.h"
 #include "peer_server.h"
 
-extern int sock;
-extern PeerList peerlist;
-extern ChunkList getchunks;
+extern PeerServer psvr;
 
-int find_unfetched_chunk(int p_index) {
-    int i;
-    download_t *dl;
-    ll_Node *iter;
-    ChunkLine *cl;
 
-    if(p_index < 0) {
-        return -1;
-    }
-
-    dl = & peerlist.peers[p_index].dl;
-    
-    iter = ll_start(&dl->queue);
-    while(iter != ll_end(&dl->queue)) {
-        cl = (ChunkLine *) iter->item;
-        for (i = 0; i < getchunks.count; i++) {
-            if(getchunks.chunks[i].state == unfetched
-                    && strcmp(getchunks.chunks[i].sha1, cl->sha1) == 0) {
-                ll_remove(&dl->queue, iter);
-                dl->get_index = i;
-                return i;
-            }
-        }
-        iter = ll_next(iter);
-    }
-
-    return -1;
-}
 
 /**
  * init the receiver handler
@@ -56,16 +27,14 @@ int dl_init(download_t *dl, int p_index, int get_index, const char *filename) {
         logger(LOG_ERROR, "filename too long");
         return -1;
     }
-    
-    init_linkedlist(& dl->queue);
-    
+
     dl->next_pkt_expected = 1;
-    
+
     dl->p_index = p_index;
     dl->get_index = get_index;
     dl->ts = get_timestamp_now();
     strcpy(dl->filename, filename);
-    
+
     //BM_CLR(dl->bm); // actually do nothing
     return 0;
 }
@@ -77,7 +46,7 @@ int dl_init(download_t *dl, int p_index, int get_index, const char *filename) {
  */
 static uint32_t get_ack(download_t *dl) {
     int i;
-    
+
     for (i = GET_BITMAP_OFFSET(dl, dl->next_pkt_expected) ; i < BT_CHUNK_SIZE; i++) {
         if (!BM_ISSET(dl->bm, i)) {
             break;
@@ -103,7 +72,7 @@ static int send_ack(int p_index, int ack) {
 
     PKT_PARAM_CLEAR(&param);
 
-    param.socket = sock;
+    param.socket = psvr.sock;
     //param.p = &peerlist;
     param.p_index = p_index;
     param.p_count = 1;
@@ -131,7 +100,7 @@ int dl_recv(download_t *dl, packet_t *pkt) {
     if (dl->finished) {
         return 0;
     }
-    
+
     /* do not update rtt until start */
     if (dl->started && !dl->block_update) {
         update_rtt(&dl->rtt, &dl->dev, dl->ts);
@@ -140,21 +109,21 @@ int dl_recv(download_t *dl, packet_t *pkt) {
         dl->started = 1;
         dl->block_update = 0;
     }
-    
+
     offset = GET_BITMAP_OFFSET(dl, GET_SEQ(pkt));
     printf("offset: %d, len: %d\n", offset, GET_DATA_LEN(pkt));
     if (GET_SEQ(pkt) <= 0 || offset + GET_DATA_LEN(pkt) > BT_CHUNK_SIZE) {
         logger(LOG_ERROR, "data offset out of buffer");
         return -1;
     }
-    
+
     memcpy(dl->buffer + offset, GET_DATA(pkt), GET_DATA_LEN(pkt));
 
     /* set bitmap */
     for (i = 0; i < GET_DATA_LEN(pkt); i++) {
         BM_SET(dl->bm, offset + i);
     }
-    
+
     send_ack(dl->p_index, get_ack(dl));
 
     dl->ts = get_timestamp_now();
@@ -193,14 +162,14 @@ int dl_check_timeout(download_t *dl) {
     if (dl->finished) {
         return -1;
     }
-    
+
     now = get_timestamp_now();
 
     /* bootstrap for rtt */
     if ((0 == dl->rtt) && (now - dl->ts) < DEFAULT_TIMEOUT) {
         return dl->timeout_cnt;
     }
-    
+
     //if ((now - dl->ts) < GET_RTO(dl)) {
     if ((now - dl->ts) < DEFAULT_TIMEOUT/2) {
         return dl->timeout_cnt;
@@ -208,7 +177,7 @@ int dl_check_timeout(download_t *dl) {
 
     dl->timeout_cnt++;
     dl_loss(dl);
-    
+
     return dl->timeout_cnt;
 }
 
@@ -218,37 +187,43 @@ int dl_check_timeout(download_t *dl) {
  */
 int dl_save_buffer(download_t *dl) {
     int fd;
-    ssize_t ret;
-    ssize_t remain = BT_CHUNK_SIZE;
-    
-    fd = creat(dl->filename, 0666);
+    /*ssize_t ret;*/
+    /*ssize_t remain = BT_CHUNK_SIZE;*/
+
+    fd = creat(dl->filename, 0644);
     if (fd < 0) {
-        logger(LOG_ERROR, "open() error");
+        logger(LOG_ERROR, "open file (%s) error", dl->filename);
         return -1;
     }
 
-WRITE_LOOP:
-    while (remain > 0) {
-        ret = write(fd, dl->buffer + (BT_CHUNK_SIZE - remain), BT_CHUNK_SIZE);
-        if (ret < 0) {
-            if (EINTR == ret) {
-                remain = BT_CHUNK_SIZE;
-                goto WRITE_LOOP;
-            } else {
-                logger(LOG_ERROR, "write() error");
-                perror("write");
-                return -1;
-            }
-        }
-        
-        remain -= ret;
+    if( write(fd, dl->buffer, BT_CHUNK_SIZE) != BT_CHUNK_SIZE ){
+        logger(LOG_ERROR, "writing to file (%s) error for chunk (%d)",
+          dl->filename, psvr.getchunks.chunks[dl->get_index].id);
+        return -1;
     }
+
+/*WRITE_LOOP:*/
+    /*while (remain > 0) {*/
+        /*ret = write(fd, dl->buffer + (BT_CHUNK_SIZE - remain), BT_CHUNK_SIZE);*/
+        /*if (ret < 0) {*/
+            /*if (EINTR == ret) {*/
+                /*remain = BT_CHUNK_SIZE;*/
+                /*goto WRITE_LOOP;*/
+            /*} else {*/
+                /*logger(LOG_ERROR, "write() error");*/
+                /*perror("write");*/
+                /*return -1;*/
+            /*}*/
+        /*}*/
+
+        /*remain -= ret;*/
+    /*}*/
 
     if (close(fd) < 0) {
-        logger(LOG_ERROR, "close() error");
+        logger(LOG_ERROR, "close file (%s) error", dl->filename);
         return -1;
     }
-    
+
     return 0;
 }
 
@@ -263,11 +238,11 @@ int dl_check_hash(void) {
 /**
  * a wrapper for finishing the downloading
  * @param dl, the handler
- * @return 0 on success, 1 if check_hash fails, -1 if other IO fails
+ * @return 1 on success, 0 on failure, -1 on error;
  */
-int dl_finish(download_t *dl) {
-    return dl_save_buffer(dl);
-}
+/*int dl_finish(download_t *dl) {*/
+    /*return dl_save_buffer(dl);*/
+/*}*/
 
 /**
  * a debugging helper

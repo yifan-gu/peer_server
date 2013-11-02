@@ -1,21 +1,12 @@
 #include <peer_server.h>
-#include <stdio.h>
 #include <malloc.h>
-#include <peerlist.h>
 
 #include <logger.h>
 #include "send_helper.h"
 
 #define BUFFER 256
 
-PeerList peerlist;
-FILE *master_chunk;
-ChunkList haschunks;
-ChunkList getchunks;
-ChunkList ihavechunks;
-int max_conn;
-int dl_num;
-int ul_num;
+PeerServer psvr;
 
 char *readString(FILE *fp)
 {
@@ -39,7 +30,7 @@ int peer_init(bt_config_t *config) {
     FILE *tmp_fp;
     char *file_str;
 
-    init_peerlist(&peerlist, config->peers, config->identity);
+    init_peerlist((PeerList *) & psvr.peerlist, config->peers, config->identity);
 
     // master chunk_file
     tmp_fp = fopen(config->chunk_file, "r");
@@ -58,66 +49,66 @@ int peer_init(bt_config_t *config) {
         return -1;
     }
 
-    master_chunk = fopen(file_str, "r");
-    if(master_chunk == NULL) {
+    psvr.master_chunk = fopen(file_str, "r");
+    if(psvr.master_chunk == NULL) {
         logger(LOG_ERROR, "can't open (%s) for master_chunk reading", file_str);
         return -1;
     }
     free(file_str);
 
     // has_chunk_file
-    if(parse_chunk(&haschunks, config->has_chunk_file) < 0 ) {
+    if(parse_chunk(&psvr.haschunks, config->has_chunk_file) < 0 ) {
         return -1;
     }
-    getchunks.count = 0;
+    psvr.getchunks.count = 0;
 
     // max_conn;
-    max_conn = config->max_conn;
-    dl_num = 0;
-    ul_num = 0;
+    psvr.max_conn = config->max_conn;
+    psvr.dl_num = 0;
+    psvr.ul_num = 0;
     return 0;
 }
 
-/*
-Assumtpion:
-  We have a maximum chunk number limit. Lines larger than that will be discarded.
- */
-int parse_chunk(ChunkList *cl, char *chunk_list_file) {
-    FILE *tmp_fp;
+int find_unfetched_chunk(int p_index) {
     int i;
+    Linlist *dq;
+    ll_Node *iter;
+    ChunkLine *cl;
 
-    tmp_fp = fopen(chunk_list_file, "r");
-    if(tmp_fp == NULL) {
-        logger(LOG_ERROR, "can't open chunk list file: %s", chunk_list_file);
+    if(p_index < 0) {
         return -1;
     }
-    {
-        i = 0;
-        while(fscanf(tmp_fp, "%d %s", &cl->chunks[i].id, cl->chunks[i].sha1) != EOF) {
-            cl->chunks[i].state = unfetched;
-            i ++ ;
-            if(i == MAX_CHUNK_NUM) {
-                break;
+
+    dq = & psvr.peerlist.peers[p_index].hasqueue;
+
+    iter = ll_start(dq);
+    while(iter != ll_end(dq)) {
+        cl = (ChunkLine *) iter->item;
+        for (i = 0; i < psvr.getchunks.count; i++) {
+            if(psvr.getchunks.chunks[i].state == unfetched
+                    && strcmp(psvr.getchunks.chunks[i].sha1, cl->sha1) == 0) {
+                ll_remove(dq, iter);
+                psvr.peerlist.peers[p_index].dl.get_index = i;
+                return i;
             }
         }
-        cl->count = i;
+        iter = ll_next(iter);
     }
-    fclose(tmp_fp);
 
-    return 0;
+    return -1;
 }
 
-ChunkLine* new_chunkline() {
-    return malloc(sizeof(ChunkLine));
-}
-
-void delete_chunkline(void *cl) {
-    free(cl);
-}
+// find another one to download
+//  iterate each peer
+//    if find_unfetched_chunk(peer) succeed
+//      send
+//
+//  if we don't reach maximum download limit and there's more chunks to download
+//    send whohas
 
 int addr2Index(struct sockaddr_in addr) {
     int i;
-    PeerList *pl = &peerlist;
+    PeerList *pl = (PeerList *) (&psvr.peerlist);
 
     for (i = 0; i < pl->count; i++) {
         if(pl->peers[i].addr.sin_port == addr.sin_port
@@ -133,9 +124,10 @@ int addr2Index(struct sockaddr_in addr) {
 int check_all_timeout() {
     int i;
     Peer *peer_p;
-    
-    for (i = 0; i < peerlist.count; i++) {
-        peer_p = &peerlist.peers[i];
+
+    for (i = 0; i < psvr.peerlist.count; i++) {
+        peer_p = &(psvr.peerlist.peers[i]);
+
         if(! peer_p->is_alive )
             continue;
 
@@ -150,7 +142,7 @@ int check_all_timeout() {
                 kill_upload(&peer_p->ul);
             }
             
-            die( &peerlist.peers[i] );
+            die( peer_p );
             // find another one to download
         }
         if(peer_p->is_uploading
@@ -160,15 +152,16 @@ int check_all_timeout() {
         {
             // stop upload activity
             kill_upload(&peer_p->ul);
+            // stop download activity and find another one to download for peer i if existed
             if (peer_p->is_downloading) {
                 kill_download(&peer_p->dl);
+                // find another one to download
             }
-            // stop download activity and find another one to download for peer i if existed
-            die( &peerlist.peers[i] );
+            die( peer_p );
         }
     }
 
-    // if any unfetched chunk exists, and we do not reach maximum download number.
+    // if any unfetched chunk exists, and we do not reach maximum download limit.
     // Then find another one to download (probably we need send whohas)
 
     return 0;

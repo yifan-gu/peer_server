@@ -6,6 +6,7 @@
 #include <linkedlist.h>
 
 #include "packet.h"
+#include <bt_parse.h>
 #include "util.h"
 #include "bitmap.h"
 
@@ -25,8 +26,6 @@
 #define REVERSE_BITMAP_OFFSET(dl, i) ((i) / (dl)->data_length + 1)
 
 typedef struct download_s {
-    Linlist queue;
-
     /**
      * The chunk index in getchunks
      */
@@ -77,7 +76,6 @@ typedef struct download_s {
  */
 typedef download_t Download;
 
-int find_unfetched_chunk(int);
 
 /**
  * init the receiver handler
@@ -115,7 +113,7 @@ int dl_check_hash(void);
  * @param dl, the handler
  * @return 0 on success, 1 if check_hash fails, -1 if other IO fails
  */
-int dl_finish(download_t *dl);
+//int dl_finish(download_t *dl);
 
 /**
  * write the buffer to file

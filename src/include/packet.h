@@ -10,7 +10,8 @@
 
 #include "sha.h"
 #include "logger.h"
-#include "peer_server.h"
+#include <chunklist.h>
+//#include "peer_server.h"
 //#include "peerlist.h"
 #include "chunk.h"
 

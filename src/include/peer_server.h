@@ -2,31 +2,29 @@
 #define _PEER_SERVER_H
 
 #include <bt_parse.h>
-#include <sha.h>
+#include <peerlist.h>
+#include <chunklist.h>
 
-#define MAX_CHUNK_NUM 1024
 
-enum ChunkState{
-  unfetched, fetching, fetched
-};
+typedef struct _PeerServer {
+    int sock;
+    bt_config_t config;
 
-typedef struct _ChunkLine{
-  enum ChunkState state; //
-  int id;
-  char sha1[SHA1_HASH_SIZE*2 + 1];
-}ChunkLine;
-
-typedef struct _ChunkList {
-  int count;
-  ChunkLine chunks[MAX_CHUNK_NUM];
-}ChunkList;
+    PeerList peerlist;
+    FILE *master_chunk;
+    ChunkList haschunks;
+    ChunkList getchunks;
+    ChunkList ihavechunks;
+    int max_conn;
+    int dl_num;
+    int ul_num;
+    int dl_remain;
+}PeerServer;
 
 
 int peer_init(bt_config_t *config);
-int parse_chunk(ChunkList *, char *);
 
-ChunkLine* new_chunkline();
-void delete_chunkline(void *cl);
+int find_unfetched_chunk(int);
 
 int addr2Index(struct sockaddr_in addr);
 /**
@@ -34,7 +32,7 @@ int addr2Index(struct sockaddr_in addr);
  * @return -1 if not find, otherwise return the index in the chunklist
  */
 int hash2Index(ChunkList *clist, const char *hash);
-    
 int check_all_timeout();
+
 
 #endif // for #ifndef _PEER_SERVER_H

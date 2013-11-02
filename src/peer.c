@@ -27,45 +27,42 @@
 #include "peerlist.h"
 #include <packet.h>
 #include <parse_packet.h>
+#include <send_helper.h>
 
-extern ChunkList getchunks;
-extern PeerList peerlist;
-
-int sock;
-bt_config_t config;
+extern PeerServer psvr;
 
 void peer_run(bt_config_t *config);
 
 int main(int argc, char **argv) {
 
     init_log(NULL);
-    
-    bt_init(&config, argc, argv);
+
+    bt_init(&psvr.config, argc, argv);
 
     DPRINTF(DEBUG_INIT, "peer.c main beginning\n");
 
 #ifdef TESTING
-    config.identity = 1; // your group number here
-    strcpy(config.chunk_file, "chunkfile");
-    strcpy(config.has_chunk_file, "haschunks");
+    psvr.config.identity = 1; // your group number here
+    strcpy(psvr.config.chunk_file, "chunkfile");
+    strcpy(psvr.config.has_chunk_file, "haschunks");
 #endif
 
-    bt_parse_command_line(&config);
+    bt_parse_command_line(&psvr.config);
 
 #ifdef DEBUG
     if (debug & DEBUG_INIT) {
-        bt_dump_config(&config);
+        bt_dump_config(&psvr.config);
     }
 #endif
 
-    if(peer_init(&config) < 0) {
+    if(peer_init(&psvr.config) < 0) {
         logger(LOG_ERROR, "Peer init failed!");
         exit(0);
     }
 
-    peer_run(&config);
+    peer_run(&psvr.config);
     deinit_log();
-    
+
     return 0;
 }
 
@@ -89,36 +86,36 @@ void process_inbound_udp(int sock) {
 
     DECODE_PKT(buf, &pkt, ret);
     print_packet(&pkt);
+
     if (!valid_packet(&pkt)) {
-        fprintf(stderr, "Invalid packet received!\n");
+        logger(LOG_INFO, "Invalid packet received!");
         return;
     }
-
     parse_packet(&pkt, from);
 }
 
 
 void process_get(char *chunkfile, char *outputfile) {
-    pkt_param_t param;
 
     printf("PROCESS GET SKELETON CODE CALLED.  Fill me in!  (%s, %s)\n",
            chunkfile, outputfile);
 
-    if ( parse_chunk(&getchunks, chunkfile) < 0 ){
-        logger(LOG_WARN, "Can't parse chunk file: %s", chunkfile);
+    if(strlen(outputfile) >= BT_FILENAME_LEN){
+        printf("Destination filename is too long!\n");
         return;
     }
 
-    // send whohas
-    PKT_PARAM_CLEAR(&param);
-    param.socket = sock;
-    //param.p = &peerlist;
-    param.p_count = -1;
-    param.c = &getchunks;
-    param.c_count = -1;
+    strcpy(psvr.config.output_file, outputfile);
 
-    param.type = PACKET_TYPE_WHOHAS;
-    send_packet(&param);
+    if ( parse_chunk(&psvr.getchunks, chunkfile) < 0 ){
+        logger(LOG_WARN, "Can't parse chunk file: %s", chunkfile);
+        return;
+    }
+    psvr.dl_remain = psvr.getchunks.count;
+
+
+    // send whohas
+    send_whohas();
 }
 
 void handle_user_input(char *line, void *cbdata) {
@@ -144,7 +141,7 @@ void peer_run(bt_config_t *config) {
         exit(-1);
     }
 
-    if ((sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_IP)) == -1) {
+    if ((psvr.sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_IP)) == -1) {
         perror("peer_run could not create socket");
         exit(-1);
     }
@@ -154,7 +151,7 @@ void peer_run(bt_config_t *config) {
     myaddr.sin_addr.s_addr = htonl(INADDR_ANY);
     myaddr.sin_port = htons(config->myport);
 
-    if (bind(sock, (struct sockaddr *) &myaddr, sizeof(myaddr)) == -1) {
+    if (bind(psvr.sock, (struct sockaddr *) &myaddr, sizeof(myaddr)) == -1) {
         perror("peer_run could not bind socket");
         exit(-1);
     }
@@ -164,14 +161,15 @@ void peer_run(bt_config_t *config) {
     while (1) {
         int nfds;
         FD_SET(STDIN_FILENO, &readfds);
-        FD_SET(sock, &readfds);
+        FD_SET(psvr.sock, &readfds);
 
-        // add timeout (5s)
-        nfds = select(sock+1, &readfds, NULL, NULL, NULL);
+        struct timeval tv = {10, 0};
+        // add timeout (10s)
+        nfds = select(psvr.sock+1, &readfds, NULL, NULL, &tv);
 
         if (nfds > 0) {
-            if (FD_ISSET(sock, &readfds)) {
-                process_inbound_udp(sock);
+            if (FD_ISSET(psvr.sock, &readfds)) {
+                process_inbound_udp(psvr.sock);
             }
 
             if (FD_ISSET(STDIN_FILENO, &readfds)) {
@@ -179,6 +177,6 @@ void peer_run(bt_config_t *config) {
                                    "Currently unused");
             }
         }
-        check_all_timeout();
+        /*check_all_timeout();*/
     }
 }

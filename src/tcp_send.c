@@ -2,6 +2,7 @@
 #include "packet.h"
 #include "bt_parse.h"
 #include "logger.h"
+#include <peerlist.h>
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -11,7 +12,6 @@
 #include <fcntl.h>
 
 extern int sock;
-extern bt_config_t config;
 extern ChunkList haschunks;
 extern PeerList peerlist;
 extern FILE *master_chunk;
@@ -65,7 +65,7 @@ int send_tcp(tcp_send_t *tcp) {
     /* make a packet */
     PKT_PARAM_CLEAR(&param);
     param.socket = sock;
-    param.p = &peerlist;
+    /*param.p = &peerlist;*/
     param.p_index = tcp->p_index;
     param.p_count = 1;
     param.type = PACKET_TYPE_DATA;
