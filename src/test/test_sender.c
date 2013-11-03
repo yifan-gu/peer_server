@@ -9,8 +9,10 @@
 #include "input_buffer.h"
 #include "spiffy.h"
 
-extern PeerList peerlist;
-extern ChunkList haschunks;
+//extern PeerList peerlist;
+//extern ChunkList haschunks;
+extern PeerServer psvr;
+
 int sock;
 
 void handle_user_input(char *line, void *cbdata) {
@@ -25,7 +27,7 @@ void handle_user_input(char *line, void *cbdata) {
         param.socket = sock;
         //param.p = &peerlist;
         param.p_count = -1;
-        param.c = &haschunks;
+        param.c = &psvr.haschunks;
         param.c_count = 0;
         param.seq = seq;
         param.ack = 0;

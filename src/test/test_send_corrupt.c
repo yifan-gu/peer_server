@@ -12,7 +12,9 @@
 #include "logger.h"
 
 #define BUFSIZE 50000
-extern PeerList peerlist;
+//extern PeerList peerlist;
+
+extern PeerServer psvr;
 
 int sock;
 
@@ -65,15 +67,15 @@ int main(int argc, char *argv[])
         exit(-1);
     }
 
-    for (i = 0; i < peerlist.count; i++) {
+    for (i = 0; i < psvr.peerlist.count; i++) {
         gen_random_data(corrupt_date, BUFSIZE);
-        ret = sendto(sock, corrupt_date, rand() % BUFSIZE, 0, (struct sockaddr *) & (peerlist.peers[i].addr),
-                     sizeof(peerlist.peers[i].addr));
+        ret = sendto(sock, corrupt_date, rand() % BUFSIZE, 0, (struct sockaddr *) & (psvr.peerlist.peers[i].addr),
+                     sizeof(psvr.peerlist.peers[i].addr));
 
-        //printf("addr->sin_addr.s_addr == %s\n", inet_ntoa(peerlist.peers[0].addr.sin_addr));
+        //printf("addr->sin_addr.s_addr == %s\n", inet_ntoa(psvr.peerlist.peers[0].addr.sin_addr));
     
         if (ret < 0) {
-            printf("peer.count: %d\n", peerlist.count);
+            printf("peer.count: %d\n", psvr.peerlist.count);
             logger(LOG_ERROR,"sendto() error\n");
         
             perror("");

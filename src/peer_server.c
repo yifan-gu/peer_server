@@ -62,7 +62,7 @@ int peer_init(bt_config_t *config) {
     }
     free(file_str);
 
-    psvr.w_fp = fopen(WINDOW_FILE, "w+");
+    psvr.w_fp = fopen(psvr.config.output_file, "w+");
     if (NULL == psvr.w_fp) {
         logger(LOG_ERROR, "can't open (%s) for window_size file", WINDOW_FILE);
         return -1;

@@ -5,7 +5,7 @@
 #include <peerlist.h>
 #include <chunklist.h>
 
-#define WINDOW_FILE "problem2-peer.txt"
+//#define WINDOW_FILE "problem2-peer.txt"
 
 typedef struct _PeerServer {
     int sock;
