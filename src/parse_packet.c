@@ -12,6 +12,7 @@ int parse_packet(packet_t *pkt, struct sockaddr_in peer_addr) {
     Peer *peer_p;
     char hash_buf[SHA1_HASH_SIZE*2+1];
 
+    printf("hello\n");
     p_index = addr2Index(peer_addr);
     if(p_index < 0){
         return -1;
@@ -19,12 +20,14 @@ int parse_packet(packet_t *pkt, struct sockaddr_in peer_addr) {
 
     peer_p = & psvr.peerlist.peers[p_index];
 
+    printf("switch\n");
     switch (GET_TYPE(pkt)) {
 
     case PACKET_TYPE_WHOHAS:
         if( ! peer_p->is_alive ){
             peer_p->is_alive = 1;
         }
+        printf("receive whohas\n");
         send_ihave(pkt, p_index);
         break;
 

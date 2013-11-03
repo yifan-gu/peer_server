@@ -56,6 +56,7 @@ void send_ihave(packet_t *pkt, int p_index) {
 
 
     param.type = PACKET_TYPE_IHAVE;
+    printf("sendIHAVE\n");
     send_packet(&param);
 }
 
@@ -189,7 +190,11 @@ int write_to_file(Download *dl) {
  * start the upload
  */
 int start_upload(Upload *ul, int p_index, int has_index) {
-    return ul_init(ul, p_index, has_index);
+    if (ul_init(ul, p_index, has_index) < 0) {
+        return -1;
+    }
+    
+    return ul_send(ul);
 }
 
 /**
@@ -197,7 +202,7 @@ int start_upload(Upload *ul, int p_index, int has_index) {
  */
 int update_upload(Upload *ul, packet_t *pkt) {
     ul_handle_ack(ul, GET_ACK(pkt));
-    return 0;
+    return ul_send(ul);
 }
 
 /**

@@ -30,6 +30,12 @@ int peer_init(bt_config_t *config) {
     FILE *tmp_fp;
     char *file_str;
 
+    psvr.start_ts = get_timestamp_now();
+    if (0 == psvr.start_ts) {
+        logger(LOG_ERROR, "get_timestamp_now() error");
+        return -1;
+    }
+    
     init_peerlist((PeerList *) & psvr.peerlist, config->peers, config->identity);
 
     // master chunk_file
@@ -55,6 +61,12 @@ int peer_init(bt_config_t *config) {
         return -1;
     }
     free(file_str);
+
+    psvr.w_fp = fopen(WINDOW_FILE, "w+");
+    if (NULL == psvr.w_fp) {
+        logger(LOG_ERROR, "can't open (%s) for window_size file", WINDOW_FILE);
+        return -1;
+    }
 
     // has_chunk_file
     if(parse_chunk(&psvr.haschunks, config->has_chunk_file) < 0 ) {
@@ -181,4 +193,15 @@ int hash2Index(ChunkList *clist, const char *hash) {
     }
 
     return -1;
+}
+
+int write_winsize(int p_index, uint32_t window_size) {
+    uint32_t now = get_timestamp_now();
+    if (0 == now) {
+        logger(LOG_ERROR, "get_timestamp_now() error");
+        return -1;
+    }
+    
+    fprintf(psvr.w_fp, "f%d\t%"PRIu32"\t%"PRIu32"\n", p_index, (now - psvr.start_ts), window_size);
+    return fflush(psvr.w_fp);
 }
