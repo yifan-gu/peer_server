@@ -148,7 +148,7 @@ void peer_run(bt_config_t *config) {
 
     bzero(&myaddr, sizeof(myaddr));
     myaddr.sin_family = AF_INET;
-    myaddr.sin_addr.s_addr = htonl(INADDR_ANY);
+    myaddr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
     myaddr.sin_port = htons(config->myport);
 
     if (bind(psvr.sock, (struct sockaddr *) &myaddr, sizeof(myaddr)) == -1) {

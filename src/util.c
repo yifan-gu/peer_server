@@ -51,3 +51,4 @@ void update_rtt(uint32_t *rtt, uint32_t *dev, uint32_t ts) {
 
     return;
 }
+

@@ -9,6 +9,7 @@
  */
 #define SS_THRESH 64
 #define MAX_DUP_ACK 3
+#define WINDOW_FILE "problem2-peer.txt"
 
 /**
  * return the offset(bytes) of the chunk in the original file
@@ -114,6 +115,11 @@ void ul_handle_ack(upload_t *ul, uint32_t ack);
  * @return Number of continuous timeout times. -1 if the connection is finished
  */
 int ul_check_timeout(upload_t *ul);
+
+/**
+ * write the window size to file
+ */
+int ul_write_winsize(upload_t *ul);
 
 /**
  * a handy helper...

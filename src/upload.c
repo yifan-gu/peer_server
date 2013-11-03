@@ -104,13 +104,14 @@ int ul_send(upload_t *ul) {
  * init the upload_t struct
  */
 int ul_init(upload_t *ul, int p_index, int has_index) {
-
     ul->window_size = 1;
     ul->p_index = p_index;
     ul->has_index = has_index;
     ul->ss_threshold = SS_THRESH;
     ul->rtt = DEFAULT_TIMEOUT;
 
+    write_winsize(ul->p_index, ul->window_size);
+    
     return load_data(ul);
 }
 
@@ -132,6 +133,8 @@ static void ul_loss(upload_t *ul) {
     ul->status = UL_STATUS_FAST_RETRANSMIT;
     ul->max_retransmit_seq = ul->max_pkt_sent;
     ul->stop_flag = 0;
+
+    write_winsize(ul->p_index, ul->window_size);
 
     return;
 }
@@ -183,6 +186,7 @@ void ul_handle_ack(upload_t *ul, uint32_t ack) {
                 ul->window_size = ul->ss_threshold;
                 ul->status = UL_STATUS_CONGESTION_AVOIDANCE;
             }
+            write_winsize(ul->p_index, ul->window_size);
             break;
 
         case UL_STATUS_CONGESTION_AVOIDANCE: // update rtt, but not here
@@ -192,6 +196,7 @@ void ul_handle_ack(upload_t *ul, uint32_t ack) {
             if (ack >= ul->last_pkt_sent) { // change state to SS after a successful transmission
                 ul->status = UL_STATUS_FAST_RETRANSMIT_SS;
                 ul->window_size++;
+                write_winsize(ul->p_index, ul->window_size);
             }
             break;
 
@@ -201,15 +206,16 @@ void ul_handle_ack(upload_t *ul, uint32_t ack) {
              */
         case UL_STATUS_FAST_RETRANSMIT_SS:
             ul->window_size++;
+            write_winsize(ul->p_index, ul->window_size);
             if (ack >= ul->max_retransmit_seq) { // exit FR state
                 ul->status = UL_STATUS_SLOW_START;
                 break;
             }
             
             if (ul->window_size > ul->ss_threshold) {
-                ul->window_size = ul->ss_threshold;
                 ul->status = UL_STATUS_FAST_RETRANSMIT_CA;
             }
+            
             break;
 
         case UL_STATUS_FAST_RETRANSMIT_CA:
@@ -262,6 +268,7 @@ int ul_check_timeout(upload_t *ul) {
          || (UL_STATUS_FAST_RETRANSMIT_CA == ul->status))
         && (now > ul->ca_ts)) {
         ul->window_size++;
+        write_winsize(ul->p_index, ul->window_size);
         ul->ca_ts = now + ul->rtt;
     }
     
@@ -270,7 +277,6 @@ int ul_check_timeout(upload_t *ul) {
     }
 
     return 0;
-
 
     /*
      * test if timeout

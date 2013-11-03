@@ -5,11 +5,13 @@
 #include <peerlist.h>
 #include <chunklist.h>
 
+#define WINDOW_FILE "problem2-peer.txt"
 
 typedef struct _PeerServer {
     int sock;
     bt_config_t config;
-
+    FILE *w_fp;
+    uint32_t start_ts;
     PeerList peerlist;
     FILE *master_chunk;
     ChunkList haschunks;
@@ -34,5 +36,6 @@ int addr2Index(struct sockaddr_in addr);
 int hash2Index(ChunkList *clist, const char *hash);
 int check_all_timeout();
 
+int write_winsize(int p_index, uint32_t window_size);
 
 #endif // for #ifndef _PEER_SERVER_H
