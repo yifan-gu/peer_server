@@ -7,8 +7,9 @@
 #include "peerlist.h"
 #include "spiffy.h"
 
-extern PeerList peerlist;
-extern ChunkList haschunks;
+//extern PeerList peerlist;
+//extern ChunkList haschunks;
+extern PeerServer psvr;
 int sock;
 
 int main(int argc, char *argv[])
@@ -55,7 +56,7 @@ int main(int argc, char *argv[])
     param.socket = sock;
     //param.p = &peerlist;
     param.p_count = -1;
-    param.c = &haschunks;
+    param.c = &psvr.haschunks;
     param.c_count = -1;
     param.seq = 1; // should have no effect on nondata packets
     param.ack = 1;

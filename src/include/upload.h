@@ -38,14 +38,14 @@ typedef struct upload_s {
     /**
      * duplicate acks: last ack number and counts
      */
-    int ack_cnt[BT_CHUNK_SIZE / 1024 + 1];
+    int ack_cnt[BT_CHUNK_SIZE / PAYLOAD_SIZE + 1];
     
     /**
      * last sent data timestamp
      */
     //uint32_t ts;
-    uint32_t seq_ts[BT_CHUNK_SIZE / 1024 + 1];
-    uint32_t seq_timeout[BT_CHUNK_SIZE / 1024 + 1];
+    uint32_t seq_ts[BT_CHUNK_SIZE / PAYLOAD_SIZE + 1];
+    uint32_t seq_timeout[BT_CHUNK_SIZE / PAYLOAD_SIZE + 1];
     
     /**
      * congestion control:
@@ -79,7 +79,7 @@ typedef struct upload_s {
      * status and flags
      */
     int status;
-    int stop_flag;
+    //int stop_flag;
     int finished;
 }upload_t;
 

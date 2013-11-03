@@ -12,8 +12,9 @@
 #include "logger.h"
 
 
-extern PeerList peerlist;
-extern ChunkList haschunks;
+//extern PeerList peerlist;
+//extern ChunkList haschunks;
+extern PeerServer psvr;
 extern FILE *log_fp;
 
 int sock;
@@ -27,7 +28,7 @@ void handle_user_input(char *line, void *cbdata) {
         param.socket = sock;
         //param.p = &peerlist;
         param.p_count = -1;
-        param.c = &haschunks;
+        param.c = &psvr.haschunks;
         param.c_count = 0;
         param.seq = 0;
         param.ack = ack;

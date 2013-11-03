@@ -55,9 +55,9 @@ static int unload_data(upload_t *ul) {
 int ul_send(upload_t *ul) {
     pkt_param_t param;
 
-    if (ul->stop_flag || ul->finished) {
+    /*if (ul->stop_flag || ul->finished) {
         return 0;
-    }
+        }*/
     
     /* make a packet */
     PKT_PARAM_CLEAR(&param);
@@ -70,7 +70,7 @@ int ul_send(upload_t *ul) {
     for (; ul->last_pkt_sent < (ul->last_pkt_acked + ul->window_size); ul->last_pkt_sent++) {
         param.seq = ul->last_pkt_sent + 1; //seq = the NextPacketExpected by the receiver
         
-        if (param.seq > BT_CHUNK_SIZE / 1024)
+        if (param.seq > BT_CHUNK_SIZE / PAYLOAD_SIZE)
             break; // reach the tail
         
         param.payload = ul->data + ((param.seq - 1) * PAYLOAD_SIZE); // seq starts from 1, but offset starts from 0
@@ -94,7 +94,7 @@ int ul_send(upload_t *ul) {
         ul->seq_timeout[param.seq] = ul->seq_ts[param.seq] + ul->rto;
     }
 
-    ul->stop_flag = 1;
+    //ul->stop_flag = 1;
     ul->max_pkt_sent = MAX(ul->max_pkt_sent, ul->last_pkt_sent);
 
     return 0;
@@ -104,6 +104,7 @@ int ul_send(upload_t *ul) {
  * init the upload_t struct
  */
 int ul_init(upload_t *ul, int p_index, int has_index) {
+    memset(ul, 0, sizeof(upload_t));
     ul->window_size = 1;
     ul->p_index = p_index;
     ul->has_index = has_index;
@@ -132,7 +133,7 @@ static void ul_loss(upload_t *ul) {
     ul->last_pkt_sent = ul->last_pkt_acked;
     ul->status = UL_STATUS_FAST_RETRANSMIT;
     ul->max_retransmit_seq = ul->max_pkt_sent;
-    ul->stop_flag = 0;
+    //ul->stop_flag = 0;
 
     write_winsize(ul->p_index, ul->window_size);
 
@@ -148,7 +149,7 @@ void ul_handle_ack(upload_t *ul, uint32_t ack) {
     }
     // if ack == 0, just restart
     if (0 == ack) {
-        ul->stop_flag = 0;
+        //ul->stop_flag = 0;
         ul->timeout_cnt = 0;
         return;
     }
@@ -229,11 +230,11 @@ void ul_handle_ack(upload_t *ul, uint32_t ack) {
             ul->last_pkt_sent = ack;
         }
         
-        ul->stop_flag = 0; // now should be able to send
+        //ul->stop_flag = 0; // now should be able to send
         ul->timeout_cnt = 0; // clear continuous timeouts
         ul->last_pkt_acked = ack;
         
-        if (ul->last_pkt_acked >= BT_CHUNK_SIZE / 1024) {
+        if (ul->last_pkt_acked >= BT_CHUNK_SIZE / PAYLOAD_SIZE) {
             ul->finished = 1;
         }
     }
@@ -272,11 +273,9 @@ int ul_check_timeout(upload_t *ul) {
         ul->ca_ts = now + ul->rtt;
     }
     
-    if (0 == ul->stop_flag) { // nothing sent, so no need to check timeouts
+    /*if (0 == ul->stop_flag) { // nothing sent, so no need to check timeouts
         return ul->timeout_cnt;
-    }
-
-    return 0;
+        }*/
 
     /*
      * test if timeout
@@ -302,7 +301,7 @@ void ul_dump(upload_t *ul, FILE *fp) {
     int i;
     
     fprintf(fp, "-----------------\n");
-    fprintf(fp, "| stop_flag: %d\t|\n", ul->stop_flag);
+    //fprintf(fp, "| stop_flag: %d\t|\n", ul->stop_flag);
     fprintf(fp, "| finished: %d\t|\n", ul->finished);
     fprintf(fp, "| p_index: %d\t|\n", ul->p_index);
     switch(ul->status) {
@@ -341,7 +340,7 @@ void ul_dump(upload_t *ul, FILE *fp) {
     fprintf(fp, "| ss_threshold: %d\n", ul->ss_threshold);
 
     fprintf(fp, "dup acks:\n");
-    for (i = 0; i < (BT_CHUNK_SIZE / 1024 + 1); i++) {
+    for (i = 0; i < (BT_CHUNK_SIZE / PAYLOAD_SIZE + 1); i++) {
         if (ul->ack_cnt[i] > 1) {
             fprintf(fp, "%d: %d, ", i, ul->ack_cnt[i]);
         }
