@@ -31,7 +31,6 @@ int dl_init(download_t *dl, int p_index, int get_index, const char filename[BT_C
     dl->ts = get_timestamp_now();
 
     strcpy(dl->filename, filename);
-    dl->filename[BT_CHUNK_SIZE - 1] = '\0';
 
     init_recvwin(&dl->rwin);
     return 0;
@@ -174,8 +173,6 @@ int dl_check_timeout(download_t *dl) {
  */
 int dl_save_buffer(download_t *dl) {
     int fd;
-    /*ssize_t ret;*/
-    /*ssize_t remain = BT_CHUNK_SIZE;*/
 
     fd = open(dl->filename,
               O_WRONLY | O_CREAT,
@@ -193,32 +190,20 @@ int dl_save_buffer(download_t *dl) {
                psvr.getchunks.chunks[dl->get_index].id * BT_CHUNK_SIZE);
     }
 
-    if( write(fd, dl->buffer, BT_CHUNK_SIZE) != BT_CHUNK_SIZE ) {
+    if( write(fd, dl->buffer, BT_CHUNK_SIZE) == BT_CHUNK_SIZE ) {
+        // mark in getchunks as fetched
+        psvr.getchunks.chunks[dl->get_index].state = fetched;
+        psvr.dl_remain --;
+        // insert to local haschunks
+        add_chunk(&psvr.haschunks, &psvr.getchunks.chunks[dl->get_index]);
+    }else{
         logger(LOG_ERROR, "writing to file (%s) error for chunk (%d)",
                dl->filename, psvr.getchunks.chunks[dl->get_index].id);
-    }
-
-    /*WRITE_LOOP:*/
-    /*while (remain > 0) {*/
-    /*ret = write(fd, dl->buffer + (BT_CHUNK_SIZE - remain), BT_CHUNK_SIZE);*/
-    /*if (ret < 0) {*/
-    /*if (EINTR == ret) {*/
-    /*remain = BT_CHUNK_SIZE;*/
-    /*goto WRITE_LOOP;*/
-    /*} else {*/
-    /*logger(LOG_ERROR, "write() error");*/
-    /*perror("write");*/
-    /*return -1;*/
-    /*}*/
-    /*}*/
-
-    /*remain -= ret;*/
-    /*}*/
-
-    if (close(fd) < 0) {
-        logger(LOG_ERROR, "close file (%s) error", dl->filename);
+        close(fd);
         return -1;
     }
+
+    close(fd);
 
     return 0;
 }

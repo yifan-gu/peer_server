@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <string.h>
 #include <malloc.h>
 #include <chunklist.h>
 #include <logger.h>
@@ -29,6 +30,18 @@ int parse_chunk(ChunkList *cl, char *chunk_list_file) {
     fclose(tmp_fp);
 
     return 0;
+}
+
+void add_chunk(ChunkList *clist, ChunkLine *cline){
+  int i;
+  for (i = 0; i < clist->count; i++) {
+      if(strcmp(clist->chunks[i].sha1, cline->sha1) == 0)
+          return;
+  }
+  if(i < clist->count){
+      clist->chunks[i] = *cline;
+      clist->count ++;
+  }
 }
 
 ChunkLine* new_chunkline() {

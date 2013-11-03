@@ -177,6 +177,6 @@ void peer_run(bt_config_t *config) {
                                    "Currently unused");
             }
         }
-        /*check_all_timeout();*/
+        check_all_timeout();
     }
 }

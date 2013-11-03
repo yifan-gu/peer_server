@@ -3,7 +3,7 @@
 
 #include <sha.h>
 
-#define MAX_CHUNK_NUM 1024
+#define MAX_CHUNK_NUM 4096
 
 enum ChunkState{
   unfetched, fetching, fetched
@@ -21,6 +21,7 @@ typedef struct _ChunkList {
 }ChunkList;
 
 int parse_chunk(ChunkList *cl, char *chunk_list_file) ;
+void add_chunk(ChunkList *clist, ChunkLine *cline);
 ChunkLine* new_chunkline() ;
 void delete_chunkline(void *cl);
 #endif // for #ifndef _CHUNKLIST_H

@@ -110,13 +110,38 @@ int find_unfetched_chunk(int p_index) {
     return -1;
 }
 
+void try_send_get(int p_index) {
+    int getIndex;
+    Peer *peer_p;
+
+    getIndex = find_unfetched_chunk(p_index);
+    if(getIndex >= 0) {
+        peer_p = &psvr.peerlist.peers[p_index];
+        send_get(p_index, getIndex);
+        // start peer download
+        psvr.dl_num ++;
+        peer_p->is_downloading = 1;
+        start_download(& peer_p->dl, p_index, getIndex, psvr.dl_filename);
+    }
+}
+
 // find another one to download
-//  iterate each peer
-//    if find_unfetched_chunk(peer) succeed
-//      send
-//
-//  if we don't reach maximum download limit and there's more chunks to download
-//    send whohas
+void refresh_chunk_download() {
+    int i;
+// iterate each peer
+//   if find_unfetched_chunk(peer) succeed
+//     send get
+    for (i = 0; i < psvr.peerlist.count; i++) {
+        if(psvr.dl_num >= psvr.max_conn)
+            break;
+        try_send_get(i);
+    }
+// if we don't reach maximum download limit and there's chunks left to download
+    if(psvr.dl_num < psvr.max_conn && psvr.dl_remain - psvr.dl_num > 0){
+//   send whohas
+        send_whohas();
+    }
+}
 
 int addr2Index(struct sockaddr_in addr) {
     int i;
@@ -144,21 +169,22 @@ int check_all_timeout() {
             continue;
 
         if(peer_p->is_downloading
-           && dl_check_timeout(&peer_p->dl) > 3
-           // and if download timeout
+                && dl_check_timeout(&peer_p->dl) > 3
+                // and if download timeout
           )
         {
             // stop download activity
+            kill_download(&peer_p->dl);
             // stop upload activity for peer i if existed
             if (peer_p->is_uploading) {
                 kill_upload(&peer_p->ul);
             }
-            
+
             die( peer_p );
             // find another one to download
         }
         if(peer_p->is_uploading
-           && ul_check_timeout(&peer_p->ul) > 3
+                && ul_check_timeout(&peer_p->ul) > 3
                 // and if upload timeout
           )
         {
@@ -175,6 +201,7 @@ int check_all_timeout() {
 
     // if any unfetched chunk exists, and we do not reach maximum download limit.
     // Then find another one to download (probably we need send whohas)
+    refresh_chunk_download();
 
     return 0;
 }
@@ -201,7 +228,7 @@ int write_winsize(int p_index, uint32_t window_size) {
         logger(LOG_ERROR, "get_timestamp_now() error");
         return -1;
     }
-    
+
     fprintf(psvr.w_fp, "f%d\t%"PRIu32"\t%"PRIu32"\n", p_index, (now - psvr.start_ts), window_size);
     return fflush(psvr.w_fp);
 }

@@ -28,6 +28,8 @@ typedef struct _PeerServer {
 int peer_init(bt_config_t *config);
 
 int find_unfetched_chunk(int);
+void try_send_get(int p_index);
+void refresh_chunk_download();
 
 int addr2Index(struct sockaddr_in addr);
 /**

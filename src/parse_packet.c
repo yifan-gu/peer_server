@@ -8,7 +8,7 @@ extern PeerServer psvr;
 
 int parse_packet(packet_t *pkt, struct sockaddr_in peer_addr) {
     int p_index;
-    int getIndex, hasIndex;
+    int hasIndex;
     Peer *peer_p;
     char hash_buf[SHA1_HASH_SIZE*2+1];
 
@@ -49,16 +49,7 @@ int parse_packet(packet_t *pkt, struct sockaddr_in peer_addr) {
             break;
         }
 
-        getIndex = find_unfetched_chunk(p_index);
-        if(getIndex >= 0) {
-            send_get(p_index, getIndex);
-            // start peer download
-            psvr.dl_num ++;
-            peer_p->is_downloading = 1;
-            start_download(& peer_p->dl,
-                           p_index, getIndex, psvr.dl_filename);
-
-        }
+        try_send_get(p_index);
         break;
 
     case PACKET_TYPE_GET :
@@ -72,6 +63,7 @@ int parse_packet(packet_t *pkt, struct sockaddr_in peer_addr) {
         }
 
         logger(LOG_DEBUG, "Receive get");
+
         GET_HASH(pkt, 0, hash_buf);
         hasIndex = hash2Index(&psvr.haschunks, hash_buf);
         if (hasIndex < 0) {
@@ -82,7 +74,7 @@ int parse_packet(packet_t *pkt, struct sockaddr_in peer_addr) {
         if( peer_p->is_uploading ){
             // Stop the previous upload.
             // This is useful when the downloading peer time out
-            // and restart downloading again.
+            // and restart downloading (another chunk) again.
             kill_upload(&peer_p->ul);
         }
         //
@@ -110,9 +102,9 @@ int parse_packet(packet_t *pkt, struct sockaddr_in peer_addr) {
             //   write to file
             if(check_hash_succeed(&peer_p->dl)){
                 write_to_file(&peer_p->dl);
-                psvr.dl_remain --;
             }
             // find another one to download
+            refresh_chunk_download();
         }
 
         //  find another one to download

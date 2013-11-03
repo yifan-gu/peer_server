@@ -198,6 +198,7 @@ int write_to_file(Download *dl) {
  */
 int start_upload(Upload *ul, int p_index, int has_index) {
     if (ul_init(ul, p_index, has_index) < 0) {
+        logger(LOG_INFO, "upload init failed");
         return -1;
     }
 

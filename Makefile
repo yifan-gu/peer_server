@@ -52,7 +52,8 @@ $(TESTDIR)/%.o: $(TESTDIR)/%.c $(HEADERS)
 .PHONY: clean
 clean:
 	@rm -f $(BINS) \
-		$(ODIR)/* $(SRCDIR)/*~ $(IDIR)/*~ $(SRCDIR)/*.orig $(IDIR)/*.orig $(TESTBINDIR)/* $(TESTDIR)/*.o
+		$(ODIR)/* $(SRCDIR)/*~ $(IDIR)/*~ $(SRCDIR)/*.orig $(IDIR)/*.orig $(TESTBINDIR)/* $(TESTDIR)/*.o \
+		output.dat verytemp
 
 test_packet: $(TEST_OBJS) $(TESTDIR)/test_packet.o
 	$(CC) -DTESTING_PACKET $(TEST_OBJS) $(TESTDIR)/test_packet.o -o $(TESTBINDIR)/test_packet $(LDFLAGS)
