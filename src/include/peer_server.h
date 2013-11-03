@@ -21,6 +21,7 @@ typedef struct _PeerServer {
     int dl_num;
     int ul_num;
     int dl_remain;
+    char dl_filename[BT_FILENAME_LEN];
 }PeerServer;
 
 

@@ -56,7 +56,7 @@ void send_ihave(packet_t *pkt, int p_index) {
 
 
     param.type = PACKET_TYPE_IHAVE;
-    printf("sendIHAVE\n");
+    /*printf("sendIHAVE\n");*/
     send_packet(&param);
 }
 
@@ -132,7 +132,7 @@ int send_get(int p_index, int getIndex) {
 /**
  * start download
  */
-int start_download(Download *dl, int p_index, int get_index, const char *filename) {
+int start_download(Download *dl, int p_index, int get_index, const char filename[BT_CHUNK_SIZE]) {
     return dl_init(dl, p_index, get_index, filename);
 }
 
@@ -176,10 +176,17 @@ int check_hash_succeed(Download *dl) {
     SHA1Final(&sc, hash);
 
     binary2hex(hash, SHA1_HASH_SIZE, hash_str);
-    return ( strncmp(hash_str,
-                     psvr.getchunks.chunks[dl->get_index].sha1,
-                     SHA1_HASH_STR_SIZE) == 0
-           )? 1 : 0;
+
+    if( strncmp(hash_str,
+                psvr.getchunks.chunks[dl->get_index].sha1,
+                SHA1_HASH_STR_SIZE) == 0) {
+        return 1;
+    }
+    else {
+        logger(LOG_WARN, "Check hash not correct:\nexpected: %s\nreceived: %s\n",
+               psvr.getchunks.chunks[dl->get_index].sha1, hash_str)
+        return 0;
+    }
 }
 
 int write_to_file(Download *dl) {
@@ -193,7 +200,7 @@ int start_upload(Upload *ul, int p_index, int has_index) {
     if (ul_init(ul, p_index, has_index) < 0) {
         return -1;
     }
-    
+
     return ul_send(ul);
 }
 

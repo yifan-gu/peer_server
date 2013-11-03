@@ -1,0 +1,59 @@
+download.c:31:    dl->next_pkt_expected = 1;
+download.c:33:    dl->p_index = p_index;
+download.c:34:    dl->get_index = get_index;
+download.c:35:    dl->ts = get_timestamp_now();
+download.c:36:    strcpy(dl->filename, filename);
+download.c:38:    init_recvwin(&dl->rwin);
+download.c:48:    recvwin_slideack(&dl->rwin);
+download.c:49:    dl->next_pkt_expected = dl->rwin.next_seq;
+download.c:51:    return dl->next_pkt_expected - 1;
+download.c:90:    if (dl->finished) {
+download.c:95:    if (dl->started && !dl->block_update) {
+download.c:96:        update_rtt(&dl->rtt, &dl->dev, dl->ts);
+download.c:98:        dl->data_length = GET_DATA_LEN(pkt);
+download.c:99:        dl->started = 1;
+download.c:100:        dl->block_update = 0;
+download.c:104:    offset = (seq - 1) * dl->data_length ;
+download.c:107:    if( ! seq_fit_in(&dl->rwin, seq) || offset + GET_DATA_LEN(pkt) > BT_CHUNK_SIZE){
+download.c:111:    if(! seq_exist_in(&dl->rwin, seq)){
+download.c:112:        memcpy(dl->buffer + offset, GET_DATA(pkt), GET_DATA_LEN(pkt));
+download.c:113:        recvwin_mark(&dl->rwin, seq);
+download.c:116:    send_ack(dl->p_index, get_ack(dl));
+download.c:118:    dl->ts = get_timestamp_now();
+download.c:119:    dl->timeout_cnt = 0;
+download.c:122:        dl->finished = 1;
+download.c:136:        send_ack(dl->p_index, get_ack(dl));
+download.c:138:    dl->ts = get_timestamp_now();
+download.c:139:    dl->block_update = 1;
+download.c:151:    if (dl->finished) {
+download.c:158:    if ((0 == dl->rtt) && (now - dl->ts) < DEFAULT_TIMEOUT) {
+download.c:159:        return dl->timeout_cnt;
+download.c:162:    //if ((now - dl->ts) < GET_RTO(dl)) {
+download.c:163:    if ((now - dl->ts) < DEFAULT_TIMEOUT/2) {
+download.c:164:        return dl->timeout_cnt;
+download.c:167:    dl->timeout_cnt++;
+download.c:170:    return dl->timeout_cnt;
+download.c:182:    fd = open(dl->filename,
+download.c:186:        logger(LOG_ERROR, "open file (%s) error", dl->filename);
+download.c:191:             psvr.getchunks.chunks[dl->get_index].id * BT_CHUNK_SIZE,
+download.c:194:               dl->filename,
+download.c:195:               psvr.getchunks.chunks[dl->get_index].id * BT_CHUNK_SIZE);
+download.c:198:    if( write(fd, dl->buffer, BT_CHUNK_SIZE) != BT_CHUNK_SIZE ) {
+download.c:200:               dl->filename, psvr.getchunks.chunks[dl->get_index].id);
+download.c:205:    /*ret = write(fd, dl->buffer + (BT_CHUNK_SIZE - remain), BT_CHUNK_SIZE);*/
+download.c:221:        logger(LOG_ERROR, "close file (%s) error", dl->filename);
+download.c:251:    fprintf(fp, "| p_index: %d\t|\n", dl->p_index);
+download.c:252:    fprintf(fp, "| get_index: %d\n", dl->get_index);
+download.c:253:    fprintf(fp, "| ts: %u\n", dl->ts);
+download.c:254:    fprintf(fp, "| rtt: %u\t|\n", dl->rtt);
+download.c:255:    fprintf(fp, "| dev: %u\t|\n", dl->dev);
+download.c:256:    fprintf(fp, "| timeout_cnt: %d\t|\n", dl->timeout_cnt);
+download.c:257:    fprintf(fp, "| filename: %s\t|\n", dl->filename);
+download.c:258:    fprintf(fp, "| started: %d\n", dl->started);
+download.c:259:    fprintf(fp, "| finished: %d\n", dl->finished);
+download.c:260:    fprintf(fp, "| next_pkt_expected : %d\n", dl->next_pkt_expected);
+download.c:261:    fprintf(fp, "| data_length: %lu\n", dl->data_length);
+send_helper.c:166:    return (dl->finished)? 1: 0 ;
+send_helper.c:175:    SHA1Update(&sc, dl->buffer, BT_CHUNK_SIZE);
+send_helper.c:181:                psvr.getchunks.chunks[dl->get_index].sha1,
+send_helper.c:187:               psvr.getchunks.chunks[dl->get_index].sha1, hash_str)

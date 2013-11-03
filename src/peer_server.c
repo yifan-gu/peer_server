@@ -35,7 +35,7 @@ int peer_init(bt_config_t *config) {
         logger(LOG_ERROR, "get_timestamp_now() error");
         return -1;
     }
-    
+
     init_peerlist((PeerList *) & psvr.peerlist, config->peers, config->identity);
 
     // master chunk_file

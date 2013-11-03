@@ -12,12 +12,12 @@ TESTDEFS	= -DTESTING			# comment this out to disable debugging code
 
 _HEADERS = bt_parse.h  chunk.h  debug.h  debug-text.h  input_buffer.h  sha.h  spiffy.h \
 		   logger.h  packet.h peer_server.h peerlist.h download.h upload.h linkedlist.h \
-		   parse_packet.h peer.h send_helper.h util.h chunklist.h
+		   parse_packet.h peer.h send_helper.h util.h chunklist.h recv_win.h
 HEADERS = $(patsubst %,$(IDIR)/%,$(_HEADERS))
 
 _OBJS = peer.o bt_parse.o spiffy.o debug.o input_buffer.o chunk.o sha.o \
 		logger.o peer_server.o peerlist.o download.o upload.o linkedlist.o packet.o \
-		parse_packet.o send_helper.o util.o chunklist.o
+		parse_packet.o send_helper.o util.o chunklist.o recv_win.o
 OBJS = $(patsubst %,$(ODIR)/%,$(_OBJS))
 
 _MK_CHUNK_OBJS   = make_chunks.o chunk.o sha.o

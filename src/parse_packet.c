@@ -12,7 +12,6 @@ int parse_packet(packet_t *pkt, struct sockaddr_in peer_addr) {
     Peer *peer_p;
     char hash_buf[SHA1_HASH_SIZE*2+1];
 
-    printf("hello\n");
     p_index = addr2Index(peer_addr);
     if(p_index < 0){
         return -1;
@@ -20,14 +19,13 @@ int parse_packet(packet_t *pkt, struct sockaddr_in peer_addr) {
 
     peer_p = & psvr.peerlist.peers[p_index];
 
-    printf("switch\n");
     switch (GET_TYPE(pkt)) {
 
     case PACKET_TYPE_WHOHAS:
         if( ! peer_p->is_alive ){
             peer_p->is_alive = 1;
         }
-        printf("receive whohas\n");
+        logger(LOG_DEBUG, "receive whohas\n");
         send_ihave(pkt, p_index);
         break;
 
@@ -50,14 +48,16 @@ int parse_packet(packet_t *pkt, struct sockaddr_in peer_addr) {
         if(psvr.dl_num >= psvr.max_conn){
             break;
         }
+
         getIndex = find_unfetched_chunk(p_index);
         if(getIndex >= 0) {
             send_get(p_index, getIndex);
             // start peer download
             psvr.dl_num ++;
             peer_p->is_downloading = 1;
-            start_download(&peer_p->dl,
-                           p_index, getIndex, psvr.config.output_file);
+            start_download(& peer_p->dl,
+                           p_index, getIndex, psvr.dl_filename);
+
         }
         break;
 
@@ -96,13 +96,14 @@ int parse_packet(packet_t *pkt, struct sockaddr_in peer_addr) {
         if( ! peer_p->is_alive || ! peer_p->is_downloading )
             break;
 
-        logger(LOG_DEBUG, "Receive data");
+        logger(LOG_DEBUG, "Receive data: %d", GET_SEQ(pkt));
         // update download
         update_download(&peer_p->dl, pkt);
         // if last packet:
         //  finish download
         if ( is_download_finished(&peer_p->dl)) {
-            finish_download(&peer_p->dl);
+            logger(LOG_DEBUG, "Finish download");
+            /*finish_download(&peer_p->dl);*/
             psvr.dl_num --;
             peer_p->is_downloading = 0;
             // if hash check succeed
@@ -121,7 +122,7 @@ int parse_packet(packet_t *pkt, struct sockaddr_in peer_addr) {
         if( ! peer_p->is_alive || ! peer_p->is_uploading )
             break;
 
-        logger(LOG_DEBUG, "Receive ack");
+        logger(LOG_DEBUG, "Receive ack: %d", GET_ACK(pkt));
         // update upload
         update_upload(&peer_p->ul, pkt);
         // if last ack:

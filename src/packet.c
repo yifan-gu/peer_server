@@ -197,10 +197,10 @@ void print_packet(packet_t *pkt) {
             GET_HASH(pkt, i, hex);
             printf("%d %s\n", i, hex);
         }
-    } else {
-        if (type == PACKET_TYPE_DATA) {
-            printf("payload: %s\n", GET_DATA(pkt));
-        }
+    /*} else {*/
+        /*if (type == PACKET_TYPE_DATA) {*/
+            /*printf("payload: %s\n", GET_DATA(pkt));*/
+        /*}*/
     }
     
     printf("\n");

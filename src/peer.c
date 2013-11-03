@@ -105,7 +105,7 @@ void process_get(char *chunkfile, char *outputfile) {
         return;
     }
 
-    strcpy(psvr.config.output_file, outputfile);
+    strcpy(psvr.dl_filename, outputfile);
 
     if ( parse_chunk(&psvr.getchunks, chunkfile) < 0 ){
         logger(LOG_WARN, "Can't parse chunk file: %s", chunkfile);

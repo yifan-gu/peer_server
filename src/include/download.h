@@ -8,22 +8,17 @@
 #include "packet.h"
 #include <bt_parse.h>
 #include "util.h"
-#include "bitmap.h"
+#include "recv_win.h"
 
-/**
- * the max receiver's window size
- */
-#define RECV_WINDOW_SIZE 512
-//#define FIXED_DATA_LENGTH 1024
 
 /**
  * number of acks to send when timeouts
  */
 #define LOSS_ACK_NUM 3
 
-#define GET_BITMAP_OFFSET(dl, seq) ((dl)->data_length * (seq - 1))
+//#define GET_BITMAP_OFFSET(dl, seq) ((dl)->data_length * (seq - 1))
 
-#define REVERSE_BITMAP_OFFSET(dl, i) ((i) / (dl)->data_length + 1)
+//#define REVERSE_BITMAP_OFFSET(dl, i) ((i) / (dl)->data_length + 1)
 
 typedef struct download_s {
     /**
@@ -44,7 +39,7 @@ typedef struct download_s {
      * receive window
      */
     uint32_t next_pkt_expected;
-    Recvbm bm;
+    RecvWin rwin;
     
     /**
      * file
