@@ -22,6 +22,7 @@ typedef struct _PeerServer {
     int ul_num;
     int dl_remain;
     char dl_filename[BT_FILENAME_LEN];
+    char getchunk_file[BT_FILENAME_LEN];
 }PeerServer;
 
 

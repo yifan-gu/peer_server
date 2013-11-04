@@ -115,7 +115,7 @@ int dl_recv(download_t *dl, packet_t *pkt) {
     dl->ts = get_timestamp_now();
     dl->timeout_cnt = 0;
 
-    if (offset + GET_DATA_LEN(pkt) == BT_CHUNK_SIZE) {
+    if ( (dl->next_pkt_expected -1)* dl->data_length >= BT_CHUNK_SIZE) {
         dl->finished = 1;
     }
 
@@ -194,6 +194,9 @@ int dl_save_buffer(download_t *dl) {
         // mark in getchunks as fetched
         psvr.getchunks.chunks[dl->get_index].state = fetched;
         psvr.dl_remain --;
+        if(psvr.dl_remain == 0){
+            printf("GOT %s\n", psvr.getchunk_file);
+        }
         // insert to local haschunks
         add_chunk(&psvr.haschunks, &psvr.getchunks.chunks[dl->get_index]);
     }else{

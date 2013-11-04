@@ -25,6 +25,8 @@ int parse_packet(packet_t *pkt, struct sockaddr_in peer_addr) {
         if( ! peer_p->is_alive ){
             peer_p->is_alive = 1;
         }
+        if( peer_p->is_uploading )
+            break;
         logger(LOG_DEBUG, "receive whohas\n");
         send_ihave(pkt, p_index);
         break;

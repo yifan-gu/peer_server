@@ -104,8 +104,13 @@ void process_get(char *chunkfile, char *outputfile) {
         printf("Destination filename is too long!\n");
         return;
     }
+    if(strlen(chunkfile) >= BT_FILENAME_LEN){
+        printf("Getchunk filename is too long!\n");
+        return;
+    }
 
     strcpy(psvr.dl_filename, outputfile);
+    strcpy(psvr.getchunk_file, chunkfile);
 
     if ( parse_chunk(&psvr.getchunks, chunkfile) < 0 ){
         logger(LOG_WARN, "Can't parse chunk file: %s", chunkfile);

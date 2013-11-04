@@ -12,6 +12,8 @@ int init_peer(Peer *pr){
 
 void die(Peer *pr){
     pr->is_alive = 0;
+    pr->is_downloading = 0;
+    pr->is_uploading = 0;
 }
 
 int init_peerlist(PeerList *pl, bt_peer_t *peers, int selfid) {

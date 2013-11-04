@@ -125,6 +125,8 @@ void try_send_get(int p_index) {
     }
 }
 
+#define NOT_GOOD_FOR_DOWNLOAD(p) ( ! (p)->is_alive || (p)->is_downloading )
+
 // find another one to download
 void refresh_chunk_download() {
     int i;
@@ -134,27 +136,15 @@ void refresh_chunk_download() {
     for (i = 0; i < psvr.peerlist.count; i++) {
         if(psvr.dl_num >= psvr.max_conn)
             break;
+        if( NOT_GOOD_FOR_DOWNLOAD(&psvr.peerlist.peers[i]))
+            continue;
         try_send_get(i);
     }
 // if we don't reach maximum download limit and there's chunks left to download
-    if(psvr.dl_num < psvr.max_conn && psvr.dl_remain - psvr.dl_num > 0){
+    if(psvr.dl_num == 0 && psvr.dl_remain > 0){
 //   send whohas
         send_whohas();
     }
-}
-
-int addr2Index(struct sockaddr_in addr) {
-    int i;
-    PeerList *pl = (PeerList *) (&psvr.peerlist);
-
-    for (i = 0; i < pl->count; i++) {
-        if(pl->peers[i].addr.sin_port == addr.sin_port
-                && pl->peers[i].addr.sin_addr.s_addr == addr.sin_addr.s_addr
-          ) {
-            return i;
-        }
-    }
-    return -1;
 }
 
 // iterate each peer in connection and check timeout
@@ -204,6 +194,20 @@ int check_all_timeout() {
     refresh_chunk_download();
 
     return 0;
+}
+
+int addr2Index(struct sockaddr_in addr) {
+    int i;
+    PeerList *pl = (PeerList *) (&psvr.peerlist);
+
+    for (i = 0; i < pl->count; i++) {
+        if(pl->peers[i].addr.sin_port == addr.sin_port
+                && pl->peers[i].addr.sin_addr.s_addr == addr.sin_addr.s_addr
+          ) {
+            return i;
+        }
+    }
+    return -1;
 }
 
 /**
