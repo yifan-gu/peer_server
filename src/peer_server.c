@@ -77,8 +77,8 @@ int peer_init(bt_config_t *config) {
     // max_conn;
     psvr.max_conn = config->max_conn;
     psvr.dl_num = 0;
+    psvr.dl_remain = 0;
     psvr.ul_num = 0;
-    psvr.last_start = 0;
     return 0;
 }
 
@@ -142,9 +142,11 @@ void refresh_chunk_download() {
         try_send_get(i);
     }
 // if we don't reach maximum download limit and there's chunks left to download
-    if(psvr.dl_num == 0 && psvr.dl_remain > 0){
+    if(psvr.dl_num == 0 && psvr.dl_remain > 0
+            && get_timestamp_now() - psvr.last_whohas > DEFAULT_TIMEOUT ) {
 //   send whohas
         send_whohas();
+        psvr.last_whohas = get_timestamp_now();
     }
 }
 

@@ -115,8 +115,7 @@ void process_get(char *chunkfile, char *outputfile) {
 
     // send whohas
     send_whohas();
-    
-    psvr.last_start = get_timestamp_now();
+    psvr.last_whohas = get_timestamp_now();
 }
 
 void handle_user_input(char *line, void *cbdata) {
@@ -164,8 +163,8 @@ void peer_run(bt_config_t *config) {
         FD_SET(STDIN_FILENO, &readfds);
         FD_SET(psvr.sock, &readfds);
 
-        // make sure we check timeout at least every 100 ms
-        struct timeval tv = {0, 100};
+        struct timeval tv = {0, 100000};
+        // add timeout (100ms)
         nfds = select(psvr.sock+1, &readfds, NULL, NULL, &tv);
 
         if (nfds > 0) {
@@ -179,8 +178,7 @@ void peer_run(bt_config_t *config) {
             }
         }
 
-        if ((psvr.dl_remain > 0)
-            && (get_timestamp_now() - psvr.last_start) > DEFAULT_TIMEOUT) {
+        if (psvr.dl_remain > 0) {
             check_all_timeout();
         }
     }
