@@ -102,11 +102,15 @@ uint8_t hash_bin_buf[SHA1_HASH_SIZE];
  * @param hash, the HASH string
  */
 #define GET_HASH(pkt, n, hexbuf)                                        \
-    binary2hex(((pkt)->payload+EXT_HEADER_SIZE(pkt)+4+(n)*SHA1_HASH_SIZE), SHA1_HASH_SIZE, (hexbuf))
+    binary2hex(((pkt)->payload+EXT_HEADER_SIZE(pkt)                     \
+                + (GET_TYPE(pkt) == PACKET_TYPE_GET ? 0 : 4)            \
+                + (n)*SHA1_HASH_SIZE), SHA1_HASH_SIZE, (hexbuf))
 
 #define SET_HASH(pkt, n, hash)                                          \
     hex2binary((hash), SHA1_HASH_STR_SIZE, hash_bin_buf);               \
-    memcpy((pkt)->payload+EXT_HEADER_SIZE(pkt)+4+(n)*SHA1_HASH_SIZE, hash_bin_buf, SHA1_HASH_SIZE)
+    memcpy((pkt)->payload+EXT_HEADER_SIZE(pkt)                          \
+           + (GET_TYPE(pkt) == PACKET_TYPE_GET ? 0 : 4)                 \
+           + (n)*SHA1_HASH_SIZE, hash_bin_buf, SHA1_HASH_SIZE)
 
 /**
  * clear the pkt_param_t struct
