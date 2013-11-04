@@ -184,7 +184,6 @@ void ul_handle_ack(upload_t *ul, uint32_t ack) {
         case UL_STATUS_SLOW_START:
             ul->window_size += ack - ul->last_pkt_acked;
             if (ul->window_size > ul->ss_threshold) {
-                ul->window_size = ul->ss_threshold;
                 ul->status = UL_STATUS_CONGESTION_AVOIDANCE;
             }
             write_winsize(ul->p_index, ul->window_size);
