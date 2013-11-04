@@ -12,6 +12,7 @@
 #include <fcntl.h>
 
 extern PeerServer psvr;
+//extern FILE *log_fp;
 
 /**
  * get the data from chunk file
@@ -77,10 +78,10 @@ int ul_send(upload_t *ul) {
         param.payload_size = PAYLOAD_SIZE;
 
         send_packet(&param);
-
-        logger(LOG_DEBUG, "send seq: %d", param.seq);
         
-        /* update timeout */
+        logger(LOG_DEBUG, "send seq: %d", param.seq);
+
+         /* update timeout */
         ul->rto = GET_RTO(ul);
         if (0 == ul->rto) { // bootstrap
             ul->rto = DEFAULT_TIMEOUT;
@@ -109,7 +110,8 @@ int ul_init(upload_t *ul, int p_index, int has_index) {
     ul->p_index = p_index;
     ul->has_index = has_index;
     ul->ss_threshold = SS_THRESH;
-    ul->rtt = DEFAULT_TIMEOUT;
+    ul->rtt = DEFAULT_TIMEOUT / 2;
+    ul->rto = DEFAULT_TIMEOUT;
 
     write_winsize(ul->p_index, ul->window_size);
     
@@ -184,7 +186,6 @@ void ul_handle_ack(upload_t *ul, uint32_t ack) {
         case UL_STATUS_SLOW_START:
             ul->window_size += ack - ul->last_pkt_acked;
             if (ul->window_size > ul->ss_threshold) {
-                ul->window_size = ul->ss_threshold;
                 ul->status = UL_STATUS_CONGESTION_AVOIDANCE;
             }
             write_winsize(ul->p_index, ul->window_size);
@@ -286,11 +287,11 @@ int ul_check_timeout(upload_t *ul) {
         return ul->timeout_cnt;
     }
 
-    ul->rtt *= 2;
-    ul->dev *= 2;
+    ul->rtt = MIN(ul->rtt*2, DEFAULT_TIMEOUT/4);
     ul->timeout_cnt++;
     ul_loss(ul);
-
+    
+    //ul_dump(ul, log_fp);
     ul_send(ul);
     return ul->timeout_cnt;
 }

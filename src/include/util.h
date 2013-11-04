@@ -3,7 +3,7 @@
 
 #include <inttypes.h>
 
-#define DEFAULT_TIMEOUT (10 * 1000) // milliseconds
+#define DEFAULT_TIMEOUT (5 * 1000) // milliseconds
 
 #define GET_RTO(tcp) (2 * (tcp)->rtt)// + 1 * (tcp)->dev)
 
