@@ -181,8 +181,6 @@ int check_all_timeout() {
                 // and if upload timeout
           )
         {
-            printf("Danger: Upload timeout!!!\n");
-            while(1);
             // stop upload activity
             kill_upload(&peer_p->ul);
             // stop download activity and find another one to download for peer i if existed

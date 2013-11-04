@@ -5,7 +5,7 @@
 #include <peerlist.h>
 #include <chunklist.h>
 
-#define MAX_TIMEOUT_CNT 3
+#define MAX_TIMEOUT_CNT 5
 
 typedef struct _PeerServer {
     int sock;

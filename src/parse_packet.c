@@ -2,6 +2,7 @@
 #include <peer_server.h>
 #include <logger.h>
 #include <download.h>
+#include <upload.h>
 #include <send_helper.h>
 
 extern PeerServer psvr;
@@ -121,6 +122,7 @@ int parse_packet(packet_t *pkt, struct sockaddr_in peer_addr) {
         logger(LOG_DEBUG, "Receive ack: %d", GET_ACK(pkt));
         // update upload
         update_upload(&peer_p->ul, pkt);
+        //ul_dump(&peer_p->ul, log_fp);
         // if last ack:
         //  finish upload
         if (is_upload_finished(&peer_p->ul)) {

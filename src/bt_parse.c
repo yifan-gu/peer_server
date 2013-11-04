@@ -26,7 +26,7 @@ static const char* const _bt_optstring = "p:c:f:m:i:d:h";
 void bt_init(bt_config_t *config, int argc, char **argv) {
   bzero(config, sizeof(bt_config_t));
 
-  strcpy(config->output_file, "output.dat");
+  strcpy(config->output_file, "problem2-peer.txt"); // CONFUSING!!!
   strcpy(config->peer_list_file, "nodes.map");
   config->argc = argc;
   config->argv = argv;
