@@ -155,6 +155,7 @@ int finish_download(Download *dl) {
  * kill download
  */
 int kill_download(Download *dl) {
+    psvr.getchunks.chunks[dl->get_index].state = unfetched;
     return 0;
 }
 
