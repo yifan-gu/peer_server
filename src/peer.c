@@ -78,11 +78,6 @@ void process_inbound_udp(int sock) {
     fromlen = sizeof(from);
     ret = spiffy_recvfrom(sock, buf, BUFLEN, 0, (struct sockaddr *) &from, &fromlen);
 
-    printf("PROCESS_INBOUND_UDP SKELETON -- replace!\n"
-           "Incoming message from %s:%d\n\n\n",
-           inet_ntoa(from.sin_addr),
-           ntohs(from.sin_port));
-
 
     DECODE_PKT(buf, &pkt, ret);
     print_packet(&pkt);
@@ -97,18 +92,20 @@ void process_inbound_udp(int sock) {
 
 void process_get(char *chunkfile, char *outputfile) {
 
-    printf("PROCESS GET SKELETON CODE CALLED.  Fill me in!  (%s, %s)\n",
-           chunkfile, outputfile);
-
     if(strlen(outputfile) >= BT_FILENAME_LEN){
         printf("Destination filename is too long!\n");
         return;
     }
+    if(strlen(chunkfile) >= BT_FILENAME_LEN){
+        printf("getchunk filename is too long!\n");
+        return;
+    }
 
     strcpy(psvr.dl_filename, outputfile);
+    strcpy(psvr.getchunk_file, chunkfile);
 
     if ( parse_chunk(&psvr.getchunks, chunkfile) < 0 ){
-        logger(LOG_WARN, "Can't parse chunk file: %s", chunkfile);
+        printf("Can't parse chunk file: %s", chunkfile);
         return;
     }
     psvr.dl_remain = psvr.getchunks.count;
@@ -177,9 +174,6 @@ void peer_run(bt_config_t *config) {
                                    "Currently unused");
             }
         }
-
-        if (psvr.dl_remain > 0) {
-            check_all_timeout();
-        }
+        check_all_timeout();
     }
 }

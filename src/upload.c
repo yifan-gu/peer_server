@@ -290,7 +290,8 @@ int ul_check_timeout(upload_t *ul) {
     ul->dev *= 2;
     ul->timeout_cnt++;
     ul_loss(ul);
-    
+
+    ul_send(ul);
     return ul->timeout_cnt;
 }
 

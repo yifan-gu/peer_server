@@ -194,7 +194,8 @@ int check_all_timeout() {
 
     // if any unfetched chunk exists, and we do not reach maximum download limit.
     // Then find another one to download (probably we need send whohas)
-    refresh_chunk_download();
+    if(psvr.dl_remain > 0)
+        refresh_chunk_download();
 
     return 0;
 }
