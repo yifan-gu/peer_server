@@ -104,13 +104,8 @@ void process_get(char *chunkfile, char *outputfile) {
         printf("Destination filename is too long!\n");
         return;
     }
-    if(strlen(chunkfile) >= BT_FILENAME_LEN){
-        printf("Getchunk filename is too long!\n");
-        return;
-    }
 
     strcpy(psvr.dl_filename, outputfile);
-    strcpy(psvr.getchunk_file, chunkfile);
 
     if ( parse_chunk(&psvr.getchunks, chunkfile) < 0 ){
         logger(LOG_WARN, "Can't parse chunk file: %s", chunkfile);
@@ -118,9 +113,10 @@ void process_get(char *chunkfile, char *outputfile) {
     }
     psvr.dl_remain = psvr.getchunks.count;
 
-
     // send whohas
     send_whohas();
+    
+    psvr.last_start = get_timestamp_now();
 }
 
 void handle_user_input(char *line, void *cbdata) {
@@ -168,8 +164,8 @@ void peer_run(bt_config_t *config) {
         FD_SET(STDIN_FILENO, &readfds);
         FD_SET(psvr.sock, &readfds);
 
-        struct timeval tv = {10, 0};
-        // add timeout (10s)
+        // make sure we check timeout at least every 100 ms
+        struct timeval tv = {0, 100};
         nfds = select(psvr.sock+1, &readfds, NULL, NULL, &tv);
 
         if (nfds > 0) {
@@ -182,6 +178,10 @@ void peer_run(bt_config_t *config) {
                                    "Currently unused");
             }
         }
-        check_all_timeout();
+
+        if ((psvr.dl_remain > 0)
+            && (get_timestamp_now() - psvr.last_start) > DEFAULT_TIMEOUT) {
+            check_all_timeout();
+        }
     }
 }

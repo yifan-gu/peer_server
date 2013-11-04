@@ -106,9 +106,11 @@ int parse_packet(packet_t *pkt, struct sockaddr_in peer_addr) {
                 write_to_file(&peer_p->dl);
             }
             // find another one to download
-            refresh_chunk_download();
+            if (psvr.dl_remain > 0) {
+                refresh_chunk_download();
+            }
         }
-
+        
         //  find another one to download
         break;
 
