@@ -118,10 +118,10 @@ uint8_t hash_bin_buf[SHA1_HASH_SIZE];
  */
 enum packet_type {
     PACKET_TYPE_WHOHAS = 0,
-    PACKET_TYPE_IHAVE = 1,
-    PACKET_TYPE_DATA = 2,
-    PACKET_TYPE_GET = 3,
-    PACKET_TYPE_ACK = 4,
+    PACKET_TYPE_IHAVE  = 1,
+    PACKET_TYPE_GET    = 2,
+    PACKET_TYPE_DATA   = 3,
+    PACKET_TYPE_ACK    = 4,
     PACKET_TYPE_DENIED = 5,
 };
 
