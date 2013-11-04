@@ -5,7 +5,7 @@
 #include <peerlist.h>
 #include <chunklist.h>
 
-//#define WINDOW_FILE "problem2-peer.txt"
+#define MAX_TIMEOUT_CNT 3
 
 typedef struct _PeerServer {
     int sock;
@@ -23,6 +23,7 @@ typedef struct _PeerServer {
     int dl_remain;
     char dl_filename[BT_FILENAME_LEN];
     char getchunk_file[BT_FILENAME_LEN];
+    uint32_t last_start;
 }PeerServer;
 
 

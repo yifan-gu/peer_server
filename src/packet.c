@@ -25,7 +25,8 @@ static void send_udp(int socket, PeerList *p, int p_index, int p_count, uint8_t 
 
     for (i = 0; i < p_count; i++) {
         ret = spiffy_sendto(socket, buf, len, 0,
-                     (struct sockaddr *) & (p->peers[p_index+i].addr), sizeof(p->peers[p_index+i].addr));
+                            (struct sockaddr *) & (p->peers[p_index+i].addr),
+                            sizeof(p->peers[p_index+i].addr));
         if (ret < 0) {
             logger(LOG_ERROR, "sendto() failed");
         }

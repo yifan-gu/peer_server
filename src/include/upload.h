@@ -9,7 +9,6 @@
  */
 #define SS_THRESH 64
 #define MAX_DUP_ACK 3
-#define WINDOW_FILE "problem2-peer.txt"
 
 /**
  * return the offset(bytes) of the chunk in the original file

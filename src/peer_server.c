@@ -64,7 +64,7 @@ int peer_init(bt_config_t *config) {
 
     psvr.w_fp = fopen(psvr.config.output_file, "w+");
     if (NULL == psvr.w_fp) {
-        logger(LOG_ERROR, "can't open (%s) for window_size file", WINDOW_FILE);
+        logger(LOG_ERROR, "can't open (%s) for window_size file", psvr.config.output_file);
         return -1;
     }
 
@@ -78,6 +78,7 @@ int peer_init(bt_config_t *config) {
     psvr.max_conn = config->max_conn;
     psvr.dl_num = 0;
     psvr.ul_num = 0;
+    psvr.last_start = 0;
     return 0;
 }
 
@@ -159,7 +160,7 @@ int check_all_timeout() {
             continue;
 
         if(peer_p->is_downloading
-                && dl_check_timeout(&peer_p->dl) > 3
+                && dl_check_timeout(&peer_p->dl) > MAX_TIMEOUT_CNT
                 // and if download timeout
           )
         {
@@ -174,7 +175,7 @@ int check_all_timeout() {
             // find another one to download
         }
         if(peer_p->is_uploading
-                && ul_check_timeout(&peer_p->ul) > 3
+                && ul_check_timeout(&peer_p->ul) > MAX_TIMEOUT_CNT
                 // and if upload timeout
           )
         {
