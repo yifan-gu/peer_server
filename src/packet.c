@@ -111,8 +111,12 @@ void send_packet(pkt_param_t *pp) {
         }
 
         if (NULL != c && nondata) { // types will have chunks
-            
-            SET_PKT_LEN(&pkt, GET_PKT_LEN(&pkt) + 4); // 4 bytes for hash count
+
+            if (PACKET_TYPE_GET == type) {
+                SET_PKT_LEN(&pkt, GET_PKT_LEN(&pkt));
+            } else {
+                SET_PKT_LEN(&pkt, GET_PKT_LEN(&pkt) + 4); // 4 bytes for hash count
+            }
             
             /* iterate on chunk to add chunk hash, and update pkt_len */
             for (cnt = 0; j < MIN(c_count, HASH_NUM_PKT*(i+1)); j++, cnt++) {
@@ -121,7 +125,12 @@ void send_packet(pkt_param_t *pp) {
 
             /* update packet length and chunk counts */
             SET_PKT_LEN(&pkt, GET_PKT_LEN(&pkt) + SHA1_HASH_SIZE * cnt);
-            SET_CHUNK_CNT(&pkt, cnt);
+
+            /* no CHUNK_CNU for GET */
+            if (PACKET_TYPE_GET != type) {
+                SET_CHUNK_CNT(&pkt, cnt);
+            }
+            
 
             /* set payload data */
         } else if (PACKET_TYPE_DATA == type && NULL != payload) {
@@ -188,20 +197,19 @@ void print_packet(packet_t *pkt) {
     printf("| Ack: %u\t|\n", GET_ACK(pkt));
     printf("| Data_len: %d\t|\n", GET_DATA_LEN(pkt));
 
-    if (nondata) {
+    if (nondata && PACKET_TYPE_GET != type) {
         printf("| Chunk_cnt: %d\t|\n", GET_CHUNK_CNT(pkt));
     }
     printf("-----------------\n");
 
-    if (nondata) {
+    if (nondata && PACKET_TYPE_GET != type) {
         for (i = 0; i < GET_CHUNK_CNT(pkt); i++) {
             GET_HASH(pkt, i, hex);
             printf("%d %s\n", i, hex);
         }
-    /*} else {*/
-        /*if (type == PACKET_TYPE_DATA) {*/
-            /*printf("payload: %s\n", GET_DATA(pkt));*/
-        /*}*/
+    } else if (PACKET_TYPE_GET == type) {
+        GET_HASH(pkt, 0, hex);
+        printf("%d %s\n", 0, hex);
     }
     
     printf("\n");
