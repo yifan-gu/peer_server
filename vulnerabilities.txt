@@ -1,9 +1,3 @@
-For implementation:
-We use array in our system to represent peers and chunks, this will make the
-code reliable and easy to implement, however it also increase the memory consumption...
-Also, it's slower than hashmap
- 
-For testing:
-More system tests are needed.
-
-
+1. We do not check the destination output file location's permission. This will be a problem if suid != ruid:
+"GET etc/B.chunks /etc/passwd"
+And system administrator will be trying to strangle you in midnight after the machines were hacked.

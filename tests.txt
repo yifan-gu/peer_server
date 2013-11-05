@@ -1,23 +1,45 @@
-tests for cp1:
+Testing
+======
 
-For cp1, we first did some unit test on packet sending and receiving, to Make
-the test bins:
+Unit testing
+------
 
-$ Make test
+We have written unit testing inside *srb/test* directory.
+
+Compile testing bins command:
+
+		$ Make test
 
 then you can run:
-$ ./test/test_recv_message [params same as 'peer']
+
+		$ ./test/test_recv_message [params same as 'peer']
+
 to listen on the port
 
 and then, run these commands in another terminal:
-$ ./test/test_send_message [params same as 'peer']
+
+		$ ./test/test_send_message [params same as 'peer']
 or
-$ ./test/test_tcp_send [params]
+
+		$ ./test/test_tcp_send [params]
 or
-$ ./test/test_send_corrupt [params]
+
+		$ ./test/test_send_corrupt [params]
 
 now you can see the result from the first terminal, if the transportation is
 successful.
 
-For system test, we have not written scripts for that yet, but we have tested
-with peers implemented by other classmates, and validated the result.
+
+System testing
+------
+
+We've run test through several edge cases including:
+
+- whohas/get timeout
+- DATA/ACK timeout
+- wrong hash
+- invalid packet
+
+in our peer server system.
+
+We've also drawn several graphs to ensure TCP windowing is working as expected.

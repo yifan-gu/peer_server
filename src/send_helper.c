@@ -1,3 +1,8 @@
+/*
+@brief
+  This module provides helper functions which encapsulates the logic of sending and handling different types of packets.
+ */
+
 #include <peerlist.h>
 #include <peer_server.h>
 #include <chunklist.h>
@@ -60,6 +65,10 @@ void send_ihave(packet_t *pkt, int p_index) {
     send_packet(&param);
 }
 
+// This will parse the ihave packet chunks and add them to corresponding peer object.
+// @return
+//  if succeeded, 0;
+//  if failed, -1;
 int parse_download(packet_t *pkt, int p_index) {
     int i, count;
     int fail_flag = 0;
@@ -167,6 +176,10 @@ int is_download_finished(Download *dl) {
     return (dl->finished)? 1: 0 ;
 }
 
+// After finishing download, this functions will compute the SHA1 hash of entire chunk
+// and compare it against the expected hash value.
+// @return
+//  1 on success, 0 on failure
 int check_hash_succeed(Download *dl) {
     uint8_t hash[SHA1_HASH_SIZE];
     char hash_str[SHA1_HASH_SIZE * 2 + 1];

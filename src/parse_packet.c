@@ -7,6 +7,20 @@
 
 extern PeerServer psvr;
 
+/*
+@brief
+  The state machine handles received packets' logistics based on their types.
+  We build a sophisticated state machine to handle different types of packets
+  and provide the logic/workflow to process them.
+  We have settled most of timeout and concurrency issues here and the algorithm is
+  detailedly discussed in readme.
+@param
+  pkt: received packet parsed object;
+  peer_addr: peer's socket address;
+@return
+  If succeeded, 0;
+  If failed, -1;
+ */
 int parse_packet(packet_t *pkt, struct sockaddr_in peer_addr) {
     int p_index;
     int hasIndex;

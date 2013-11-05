@@ -1,3 +1,7 @@
+/*
+@brief
+  This module provides peer list relevant attributes and functions.
+ */
 #include <peerlist.h>
 #include <string.h>
 #include "download.h"
@@ -16,6 +20,7 @@ void die(Peer *pr){
     pr->is_uploading = 0;
 }
 
+// init the peer list
 int init_peerlist(PeerList *pl, bt_peer_t *peers, int selfid) {
     bt_peer_t *p;
     int i = 0;

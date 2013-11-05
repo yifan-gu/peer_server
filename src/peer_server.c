@@ -1,3 +1,8 @@
+/*
+@brief
+  This module give skeleton functions of starting, running servers, handling timeout.
+  It also provides some helper functions for peer server object.
+ */
 #include <peer_server.h>
 #include <malloc.h>
 
@@ -8,6 +13,13 @@
 
 PeerServer psvr;
 
+/*
+@brief
+  Robust function for string reading from stdin
+@return
+  If succeeded, string pointer of a valid, NULL-byte ended string;
+  If failed, NULL pointer;
+ */
 char *readString(FILE *fp)
 {
     char *str = malloc(sizeof(char) * BUFFER), *err;
@@ -26,6 +38,15 @@ char *readString(FILE *fp)
     return str;
 }
 
+/*
+@brief
+  init function for peer server:
+  - getting peerlist, chunklist file logic into easily accessible code structure.
+  - initiating peer server attributes (dl number, ul number, etc.)
+@return
+  If succeeded, 0;
+  If failed, -1;
+ */
 int peer_init(bt_config_t *config) {
     FILE *tmp_fp;
     char *file_str;
@@ -82,6 +103,17 @@ int peer_init(bt_config_t *config) {
     return 0;
 }
 
+/*
+@brief
+  Find any chunk that we haven't fetched yet so that we can download it.
+  (Design Decision:
+    This will automatically removed that chunk from the peer's has chunk queue too.)
+@param
+  p_index: the peer's index in peerlist
+@return
+  If succeeded, chunk index;
+  If failed, -1;
+ */
 int find_unfetched_chunk(int p_index) {
     int i;
     Linlist *dq;
@@ -111,6 +143,7 @@ int find_unfetched_chunk(int p_index) {
     return -1;
 }
 
+// try to send get to the peer
 void try_send_get(int p_index) {
     int getIndex;
     Peer *peer_p;
