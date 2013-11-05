@@ -1,11 +1,25 @@
+/*
+@brief
+  This module provides functions to handle chunk list logistics.
+ */
 #include <stdio.h>
 #include <string.h>
 #include <malloc.h>
 #include <chunklist.h>
 #include <logger.h>
+
+
 /*
-Assumtpion:
+@Assumtpion:
   We have a maximum chunk number limit. Lines larger than that will be discarded.
+@brief:
+  Parse the chunk file logic into easily accessible code structure.
+@param
+  cl: chunk list object reference;
+  chunk_list_file: chunk list file;
+@return
+  If succeeded, 0;
+  If failed, -1;
  */
 int parse_chunk(ChunkList *cl, char *chunk_list_file) {
     FILE *tmp_fp;
@@ -32,6 +46,7 @@ int parse_chunk(ChunkList *cl, char *chunk_list_file) {
     return 0;
 }
 
+// Add one chunk line into the chunk list object
 void add_chunk(ChunkList *clist, ChunkLine *cline){
   int i;
   for (i = 0; i < clist->count; i++) {
