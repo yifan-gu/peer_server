@@ -198,7 +198,8 @@ int dl_save_buffer(download_t *dl) {
             printf("GOT %s\n", psvr.getchunk_file);
         }
         // insert to local haschunks
-        add_chunk(&psvr.haschunks, &psvr.getchunks.chunks[dl->get_index]);
+        // (currently not supported because of implementation of upload data.
+        /*add_chunk(&psvr.haschunks, &psvr.getchunks.chunks[dl->get_index]);*/
     }else{
         logger(LOG_ERROR, "writing to file (%s) error for chunk (%d)",
                dl->filename, psvr.getchunks.chunks[dl->get_index].id);
