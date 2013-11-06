@@ -13,6 +13,7 @@
 #include <chunklist.h>
 #include "chunk.h"
 
+
 /**
  * The hashcode in binary
  */
@@ -22,6 +23,7 @@ uint8_t hash_bin_buf[SHA1_HASH_SIZE];
 #define VERSION 1
 #define HEADER_SIZE 16
 #define PACKET_SIZE 1500 // udp packet size
+#define MAX_OFFSET (MAX_PAYLOAD_SIZE - SHA1_HASH_SIZE)
 
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 /**
@@ -84,16 +86,22 @@ uint8_t hash_bin_buf[SHA1_HASH_SIZE];
 #define SET_ACK(pkt, v) ((pkt)->ack = (v))
 
 #define GET_DATA_LEN(pkt) ((pkt)->pkt_len - (pkt)->hdr_len - EXT_HEADER_SIZE((pkt)))
-#define GET_DATA(pkt) ((pkt)->payload + EXT_HEADER_SIZE(pkt))
+#define GET_DATA(pkt) ((pkt)->payload + MIN(MAX_OFFSET, EXT_HEADER_SIZE(pkt)))
 
 /**
  * Get / Set chunk numbers, EXT_HEADER_SIZE is reserved for other implementations
  * @param pkt, a pointer to a packet_t struct
  * @param cnt, the chunk number to be set
  */
-#define GET_CHUNK_CNT(pkt) ((pkt)->payload[0+EXT_HEADER_SIZE(pkt)])
+#define GET_CHUNK_CNT(pkt) ((pkt)->payload[MIN(MAX_OFFSET, EXT_HEADER_SIZE(pkt))])
 #define SET_CHUNK_CNT(pkt, cnt) ((pkt)->payload[0+EXT_HEADER_SIZE(pkt)] = (cnt))
 
+/**
+ * helper to ensure offset will not overflow
+ */
+#define HASH_OFFSET(pkt, n) (MIN(MAX_OFFSET, EXT_HEADER_SIZE(pkt)       \
+                                 + (GET_TYPE(pkt) == PACKET_TYPE_GET ? 0 : 4) \
+                                 + (n)*SHA1_HASH_SIZE))
 /**
  * GET / Set hash string
  * "4" is the size of chunk_numbers, EXT_HEADER_SIZE is reserved for other implementations
@@ -102,9 +110,7 @@ uint8_t hash_bin_buf[SHA1_HASH_SIZE];
  * @param hash, the HASH string
  */
 #define GET_HASH(pkt, n, hexbuf)                                        \
-    binary2hex(((pkt)->payload+EXT_HEADER_SIZE(pkt)                     \
-                + (GET_TYPE(pkt) == PACKET_TYPE_GET ? 0 : 4)            \
-                + (n)*SHA1_HASH_SIZE), SHA1_HASH_SIZE, (hexbuf))
+    binary2hex((pkt)->payload + HASH_OFFSET(pkt, n), SHA1_HASH_SIZE, (hexbuf))
 
 #define SET_HASH(pkt, n, hash)                                          \
     hex2binary((hash), SHA1_HASH_STR_SIZE, hash_bin_buf);               \
