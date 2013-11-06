@@ -39,17 +39,24 @@ Similarly, peer list provides attributes needed to handle peer list logistics.
 This module provides chunk list so that we can parse the chunk file logic into easily accessible code.
 
 ### Network packet Encoding and Decoding
+This module provides interfaces to encode/decode packets, as well as some helpful functions to get specific fields in the packet.
 
 ### Packet Type Handling
 We build a sophisticated state machine to handle different types of packets
 and provide the logic/workflow to process them.
 
-### Downloading: TCP Receive
+### Download
+This module provides an implementation of the receiving part of tcp. We use a circular queue as the buffer the receive the data.
+When finishe downloading one chunk, this module will save the chunk to the output file.
+This module also handle timeouts.
 
 ### Uploading: TCP Send
+This module provides an implementation of the sending part of tcp. It implements Slow Start, Congestion Avoidance and Fast Retransmission.
+Also, it handles dup acks and timeouts.
+This module computes RTT and RTO dynamically, we adopted a backoff timeouts with upbound in Fast Retransmission as decribed in Karn's Algorithm.
 
 ### Utilities
-
+This module provides some helpful functions, like computing the timestamp, computing the timeouts, etc.
 
 Algorithm
 ------
@@ -74,10 +81,23 @@ If it's exceeded (timeout happens too many times), we will consider the connecti
 
 ### Update RTT
 
-
+Generally, we use every ACK to get sample RTT, and update the RTT by RTT = 0.875 * RTT + 0.125 * sample RTT,
+except for Fast Retransmission. We do not use ACK of the retransmitted packets to compute RTT, so we can avoid ambiguous ACK.
 
 ### Sending Window
 
+1. Slow Start
+In Slow Start, the sending window size grows one unit every time receiving an valid ACK until reaching the threshold,
+then it changes state to Congestion Avoidance. We also slides the windows forward if necessary.
+
+If it loss a packet in this phase(dup ACK or timeouts), it will change state to FastRetransmission.
+
+2. Congestion Avoidance
+In Congestion Avoidance, the sending window grows one unit every RTT period pasts if no dup ACK or timeouts happens. Otherwise it changes state to FastRetransmission
+
+3. FastRetransmission
+In Fast retransmission, the window size starts at one, it will wait the ACK for the first retransmitted packet, and then change to Slow Start, if the ACK for the first
+retransmitted packet timeouts, it will retransmit the packet again.
 
 ### Receiving Window
 The receive window is of size 1024, which means we can store at most 1024 packets before sliding the ack pointer.
