@@ -16,7 +16,7 @@ extern PeerServer psvr;
  * @param buf, data buffer
  * @param len, data buffer length
  */
-void send_udp(int socket, PeerList *p, int p_index, int p_count, uint8_t *buf, size_t len) {
+static void send_udp(int socket, PeerList *p, int p_index, int p_count, uint8_t *buf, size_t len) {
     int i, ret;
 
     for (i = 0; i < p_count; i++) {
