@@ -117,7 +117,7 @@ int parse_packet(packet_t *pkt, struct sockaddr_in peer_addr) {
         if ( is_download_finished(&peer_p->dl)) {
             /*finish_download(&peer_p->dl);*/
             psvr.dl_num --;
-            logger(LOG_DEBUG, "Finish download");
+            logger(LOG_DEBUG, "Finish download %d", psvr.dl_remain);
             peer_p->is_downloading = 0;
             // if hash check succeed
             //   write to file

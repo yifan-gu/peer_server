@@ -12,7 +12,7 @@
 #include <fcntl.h>
 
 extern PeerServer psvr;
-//extern FILE *log_fp;
+extern FILE *log_fp;
 
 /**
  * get the data from chunk file
@@ -146,6 +146,7 @@ static void ul_loss(upload_t *ul) {
  * handle the ack
  */
 void ul_handle_ack(upload_t *ul, uint32_t ack) {
+    ul_dump(ul, log_fp);
     if (ul->finished) {
         return;
     }

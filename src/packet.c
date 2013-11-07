@@ -115,12 +115,33 @@ void send_packet(pkt_param_t *pp) {
             }
             
             /* iterate on chunk to add chunk hash, and update pkt_len */
-            for (cnt = 0; j < MIN(c_count, HASH_NUM_PKT*(i+1)); j++, cnt++) {
-                SET_HASH(&pkt, cnt, c->chunks[c_index+j].sha1);
+            for (cnt = 0; j < MIN(c_count, HASH_NUM_PKT*(i+1)); j++) {
+                if (PACKET_TYPE_WHOHAS == type) {
+                    /* only send WHOHAS for unfetched files */
+                    if (unfetched == psvr.getchunks.chunks[c_index+j].state) {
+                        SET_HASH(&pkt, cnt, c->chunks[c_index+j].sha1);
+                        cnt++;
+                    }
+                } else if (PACKET_TYPE_IHAVE == type || PACKET_TYPE_GET == type) {
+                    SET_HASH(&pkt, cnt, c->chunks[c_index+j].sha1);
+                    cnt++;
+                }
             }
 
+            if (type == PACKET_TYPE_WHOHAS) {
+                printf("before\n");
+                print_packet(&pkt);
+            }
+            
             /* update packet length and chunk counts */
             SET_PKT_LEN(&pkt, GET_PKT_LEN(&pkt) + SHA1_HASH_SIZE * cnt);
+
+            if (type == PACKET_TYPE_WHOHAS) {
+                printf("after\n");
+                print_packet(&pkt);
+            }
+            
+
 
             /* no CHUNK_CNU for GET */
             if (PACKET_TYPE_GET != type) {
@@ -153,7 +174,7 @@ void send_packet(pkt_param_t *pp) {
  * @return 1 if valid, 0 if not
  */
 int valid_packet(packet_t *pkt) {
-    if ( GET_MAGIC(pkt) != MAGIC) {
+    if (GET_MAGIC(pkt) != MAGIC) {
         logger(LOG_INFO, "Invalid Magic");
         return 0;
     }

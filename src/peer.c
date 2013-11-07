@@ -35,7 +35,7 @@ void peer_run(bt_config_t *config);
 
 int main(int argc, char **argv) {
 
-    init_log(NULL);
+    init_log("log.log");
 
     bt_init(&psvr.config, argc, argv);
 

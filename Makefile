@@ -6,7 +6,7 @@ TESTBINDIR=test/bin
 MULTITEST=test/multitest
 
 CC 		= gcc
-CFLAGS=-I$(IDIR) -Wall -Werror -DDEBUG
+CFLAGS=-I$(IDIR) -Wall -Werror -DDEBUG -g
 LDFLAGS	= -lm
 
 TESTDEFS	= -DTESTING			# comment this out to disable debugging code
