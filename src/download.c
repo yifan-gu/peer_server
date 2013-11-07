@@ -192,6 +192,7 @@ int dl_save_buffer(download_t *dl) {
 
     if( write(fd, dl->buffer, BT_CHUNK_SIZE) == BT_CHUNK_SIZE ) {
         // mark in getchunks as fetched
+        psvr.dl_num --;
         psvr.getchunks.chunks[dl->get_index].state = fetched;
         psvr.dl_remain --;
         if(psvr.dl_remain == 0){

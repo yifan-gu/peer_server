@@ -142,7 +142,11 @@ int send_get(int p_index, int getIndex) {
  * start download
  */
 int start_download(Download *dl, int p_index, int get_index, const char filename[BT_CHUNK_SIZE]) {
-    return dl_init(dl, p_index, get_index, filename);
+    if( dl_init(dl, p_index, get_index, filename) < 0){
+        return -1;
+    }
+    psvr.dl_num ++;
+    return 0;
 }
 
 /**
@@ -165,6 +169,7 @@ int finish_download(Download *dl) {
  */
 int kill_download(Download *dl) {
     psvr.getchunks.chunks[dl->get_index].state = unfetched;
+    psvr.dl_num --;
     return 0;
 }
 
@@ -216,7 +221,10 @@ int start_upload(Upload *ul, int p_index, int has_index) {
         return -1;
     }
 
-    return ul_send(ul);
+    if( ul_send(ul) < 0 )
+        return -1;
+    psvr.ul_num ++;
+    return 0;
 }
 
 /**
@@ -238,6 +246,7 @@ int is_upload_finished(Upload *ul) {
  * finish upload
  */
 int finish_upload(Upload *ul) {
+    psvr.ul_num --;
     return ul_deinit(ul);
 }
 

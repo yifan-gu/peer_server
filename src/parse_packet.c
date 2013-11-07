@@ -97,7 +97,6 @@ int parse_packet(packet_t *pkt, struct sockaddr_in peer_addr) {
         //
         // start peer upload
         start_upload(&peer_p->ul, p_index, hasIndex);
-        psvr.ul_num ++;
         peer_p->is_uploading = 1;
         break;
 
@@ -112,12 +111,11 @@ int parse_packet(packet_t *pkt, struct sockaddr_in peer_addr) {
         //  finish download
         if ( is_download_finished(&peer_p->dl)) {
             logger(LOG_DEBUG, "Finish download");
-            /*finish_download(&peer_p->dl);*/
-            psvr.dl_num --;
             peer_p->is_downloading = 0;
             // if hash check succeed
             //   write to file
             if(check_hash_succeed(&peer_p->dl)){
+                /*finish_download(&peer_p->dl);*/
                 write_to_file(&peer_p->dl);
             }
             // find another one to download
@@ -141,7 +139,6 @@ int parse_packet(packet_t *pkt, struct sockaddr_in peer_addr) {
         //  finish upload
         if (is_upload_finished(&peer_p->ul)) {
             finish_upload(&peer_p->ul);
-            psvr.ul_num --;
             peer_p->is_uploading = 0;
         }
 

@@ -153,7 +153,6 @@ void try_send_get(int p_index) {
         peer_p = &psvr.peerlist.peers[p_index];
         send_get(p_index, getIndex);
         // start peer download
-        psvr.dl_num ++;
         peer_p->is_downloading = 1;
         start_download(& peer_p->dl, p_index, getIndex, psvr.dl_filename);
     }
