@@ -115,18 +115,20 @@ int parse_packet(packet_t *pkt, struct sockaddr_in peer_addr) {
         // if last packet:
         //  finish download
         if ( is_download_finished(&peer_p->dl)) {
+            /*finish_download(&peer_p->dl);*/
             psvr.dl_num --;
             logger(LOG_DEBUG, "Finish download");
             peer_p->is_downloading = 0;
             // if hash check succeed
             //   write to file
             if(check_hash_succeed(&peer_p->dl)){
-                /*finish_download(&peer_p->dl);*/
                 write_to_file(&peer_p->dl);
             }
-            // find another one to download
-            psvr.getchunks.chunks[peer_p->dl.get_index].state = unfetched;
+            // if we didn't successfully get it fetched
+            if(psvr.getchunks.chunks[peer_p->dl.get_index].state != fetched)
+                psvr.getchunks.chunks[peer_p->dl.get_index].state = unfetched;
 
+            // find another one to download
             if (psvr.dl_remain > 0) {
                 refresh_chunk_download();
             }
