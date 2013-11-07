@@ -83,12 +83,15 @@ int peer_init(bt_config_t *config) {
     }
     free(file_str);
 
-    psvr.w_fp = fopen(psvr.config.output_file, "w+");
-    if (NULL == psvr.w_fp) {
-        logger(LOG_ERROR, "can't open (%s) for window_size file", psvr.config.output_file);
-        return -1;
+    if (0 == config->no_output) {
+        psvr.w_fp = fopen(psvr.config.output_file, "w+");
+        
+        if (NULL == psvr.w_fp) {
+            logger(LOG_ERROR, "can't open (%s) for window_size file", psvr.config.output_file);
+            return -1;
+        }
     }
-
+    
     // has_chunk_file
     if(parse_chunk(&psvr.haschunks, config->has_chunk_file) < 0 ) {
         return -1;
@@ -263,12 +266,18 @@ int hash2Index(ChunkList *clist, const char *hash) {
 }
 
 int write_winsize(int p_index, uint32_t window_size) {
+    if (psvr.config.no_output) {
+        return 0;
+    }
+    
     uint32_t now = get_timestamp_now();
     if (0 == now) {
         logger(LOG_ERROR, "get_timestamp_now() error");
         return -1;
     }
 
-    fprintf(psvr.w_fp, "f%d\t%"PRIu32"\t%"PRIu32"\n", p_index, (now - psvr.start_ts), window_size);
+    fprintf(psvr.w_fp, "f%d\t%"PRIu32"\t%"PRIu32"\n",
+            psvr.peerlist.peers[p_index].id, (now - psvr.start_ts), window_size);
+    
     return fflush(psvr.w_fp);
 }

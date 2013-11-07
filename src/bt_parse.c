@@ -21,7 +21,7 @@
 #include "bt_parse.h"
 #include "debug.h"
 
-static const char* const _bt_optstring = "p:c:f:m:i:d:h";
+static const char* const _bt_optstring = "p:c:f:m:i:d:hn";
 
 void bt_init(bt_config_t *config, int argc, char **argv) {
   bzero(config, sizeof(bt_config_t));
@@ -30,6 +30,7 @@ void bt_init(bt_config_t *config, int argc, char **argv) {
   strcpy(config->peer_list_file, "nodes.map");
   config->argc = argc;
   config->argv = argv;
+  config->no_output = 0;
 }
 
 void bt_usage() {
@@ -98,6 +99,9 @@ void bt_parse_command_line(bt_config_t *config) {
       break;
     case 'i':
       config->identity = atoi(optarg);
+      break;
+    case 'n':
+      config->no_output = 1;
       break;
     default:
       bt_usage();

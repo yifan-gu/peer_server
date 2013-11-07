@@ -29,25 +29,38 @@ void gen_random_data(char *buf, size_t len) {
     return;
 }
 
+void send_udps(int socket, PeerList *p, int p_index, int p_count, uint8_t *buf, size_t len) {
+    int i, ret;
+
+    for (i = 0; i < p_count; i++) {
+        ret = sendto(socket, buf, len, 0,
+                     (struct sockaddr *) & (p->peers[p_index+i].addr),
+                     sizeof(p->peers[p_index+i].addr));
+        if (ret < 0) {
+            logger(LOG_ERROR, "sendto() failed");
+        }
+    }
+}
+
 int main(int argc, char *argv[])
 {
     char corrupt_date[BUFSIZE];
 
     int ret, i;
+    packet_t pkt;
     struct sockaddr_in myaddr;
-    bt_config_t config;
-
-    bt_init(&config, argc, argv);
+    init_log(NULL);
+    bt_init(&psvr.config, argc, argv);
 
 #ifdef TESTING
-    config.identity = 1; // your group number here
-    strcpy(config.chunk_file, "chunkfile");
-    strcpy(config.has_chunk_file, "haschunks");
+    psvr.config.identity = 1; // your group number here
+    strcpy(psvr.config.chunk_file, "chunkfile");
+    strcpy(psvr.config.has_chunk_file, "haschunks");
 #endif
 
-    bt_parse_command_line(&config);
+    bt_parse_command_line(&psvr.config);
 
-    if(peer_init(&config) < 0) {
+    if(peer_init(&psvr.config) < 0) {
         logger(LOG_ERROR, "Peer init failed!");
         exit(0);
     }
@@ -60,7 +73,7 @@ int main(int argc, char *argv[])
     bzero(&myaddr, sizeof(myaddr));
     myaddr.sin_family = AF_INET;
     myaddr.sin_addr.s_addr = htonl(INADDR_ANY);
-    myaddr.sin_port = htons(config.myport);
+    myaddr.sin_port = htons(psvr.config.myport);
 
     if (bind(sock, (struct sockaddr *) &myaddr, sizeof(myaddr)) == -1) {
         perror("peer_run could not bind socket");
@@ -80,9 +93,117 @@ int main(int argc, char *argv[])
         
             perror("");
         } else {
-            printf("sent %d!\n", i);
+            printf("sent peer count: %d!\n", i);
         }
     }
+
+    printf("sending malicious packet\n");
+
+
+    printf("sending pkt with huge pkt len: 10000\n");
+    pkt.magic = MAGIC;
+    pkt.version = VERSION;
+    SET_PKT_LEN(&pkt, 10000);
+    SET_TYPE(&pkt, PACKET_TYPE_WHOHAS);
+    SET_HDR_LEN(&pkt, 16);
+    SET_CHUNK_CNT(&pkt, 1);
+
+    ENCODE_PKT(corrupt_date, &pkt);
+
+    send_udps(sock, &psvr.peerlist, 0, psvr.peerlist.count, (uint8_t *)corrupt_date, 1500);
+
+    printf("sending pkt with huge hdr len: 10000\n");
+    pkt.magic = MAGIC;
+    pkt.version = VERSION;
+    SET_HDR_LEN(&pkt, 10000);
+    SET_TYPE(&pkt, PACKET_TYPE_WHOHAS);
+    SET_PKT_LEN(&pkt, 1500);
+    SET_CHUNK_CNT(&pkt, 1);
+
+    ENCODE_PKT(corrupt_date, &pkt);
+    
+    send_udps(sock, &psvr.peerlist, 0, psvr.peerlist.count, (uint8_t *)corrupt_date, 1500);
+    
+    printf("sending pkt with hdr len > pkt len: 100, 50\n");
+    pkt.magic = MAGIC;
+    pkt.version = VERSION;
+    SET_HDR_LEN(&pkt, 100);
+    SET_TYPE(&pkt, PACKET_TYPE_WHOHAS);
+    SET_PKT_LEN(&pkt, 50);
+    SET_CHUNK_CNT(&pkt, 1);
+
+    ENCODE_PKT(corrupt_date, &pkt);
+    
+    send_udps(sock, &psvr.peerlist, 0, psvr.peerlist.count, (uint8_t *)corrupt_date, 1500);
+
+    printf("sending pkt with hdr len = 10\n");
+    pkt.magic = MAGIC;
+    pkt.version = VERSION;
+    SET_HDR_LEN(&pkt, 10);
+    SET_TYPE(&pkt, PACKET_TYPE_WHOHAS);
+    SET_PKT_LEN(&pkt, 50);
+    SET_CHUNK_CNT(&pkt, 1);
+
+    ENCODE_PKT(corrupt_date, &pkt);
+    
+    send_udps(sock, &psvr.peerlist, 0, psvr.peerlist.count, (uint8_t *)corrupt_date, 1500);
+
+    printf("sending pkt with chunk cnt == 0\n");
+    pkt.magic = MAGIC;
+    pkt.version = VERSION;
+    SET_HDR_LEN(&pkt, 16);
+    SET_TYPE(&pkt, PACKET_TYPE_WHOHAS);
+    SET_PKT_LEN(&pkt, 1500);
+    SET_CHUNK_CNT(&pkt, 0);
+    
+
+    ENCODE_PKT(corrupt_date, &pkt);
+    
+    send_udps(sock, &psvr.peerlist, 0, psvr.peerlist.count, (uint8_t *)corrupt_date, 1500);
+
+    printf("sending pkt with chunk cnt == 80\n");
+    pkt.magic = MAGIC;
+    pkt.version = VERSION;
+    SET_HDR_LEN(&pkt, 16);
+    SET_TYPE(&pkt, PACKET_TYPE_WHOHAS);
+    SET_PKT_LEN(&pkt, 1500);
+    SET_CHUNK_CNT(&pkt, 80);
+    
+
+    ENCODE_PKT(corrupt_date, &pkt);
+    
+    send_udps(sock, &psvr.peerlist, 0, psvr.peerlist.count, (uint8_t *)corrupt_date, 1500);
+
+    send_udps(sock, &psvr.peerlist, 0, psvr.peerlist.count, (uint8_t *)corrupt_date, 1500);
+
+    printf("sending WHOHASH pkt with chunk cnt == 1 and datalen = 4\n");
+    pkt.magic = MAGIC;
+    pkt.version = VERSION;
+    SET_HDR_LEN(&pkt, 16);
+    SET_TYPE(&pkt, PACKET_TYPE_WHOHAS);
+    SET_PKT_LEN(&pkt, 26);
+    SET_CHUNK_CNT(&pkt, 1);
+    //printf("chunk cnt: %d, MAX_OF: %d, EXT_HDR: %d\n", GET_CHUNK_CNT(&pkt), MAX_OFFSET(&pkt), EXT_HEADER_SIZE(&pkt));
+    
+
+    ENCODE_PKT(corrupt_date, &pkt);
+    
+    send_udps(sock, &psvr.peerlist, 0, psvr.peerlist.count, (uint8_t *)corrupt_date, 1500);
+
+    printf("sending GET pkt with chunk cnt == 1 and datalen == 4\n");
+    pkt.magic = MAGIC;
+    pkt.version = VERSION;
+    SET_HDR_LEN(&pkt, 16);
+    SET_TYPE(&pkt, PACKET_TYPE_GET);
+    SET_PKT_LEN(&pkt, 20);
+    SET_CHUNK_CNT(&pkt, 1);
+    
+
+    ENCODE_PKT(corrupt_date, &pkt);
+    
+    send_udps(sock, &psvr.peerlist, 0, psvr.peerlist.count, (uint8_t *)corrupt_date, 1500);
     
     return 0;
 }
+
+

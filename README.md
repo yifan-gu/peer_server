@@ -16,6 +16,7 @@ TOC
 * ./src/include: source header file folder
 * ./src/test: unit testing file folder
 * ./test/: the test bins
+* ./test/multitest/: some concurrent testing
 * ./vulnerabilities.txt: the vulnerabilities description
 * ./Makefile: the Makefile
 * ./etc/: the folder contains non source-code files

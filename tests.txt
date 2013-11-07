@@ -4,7 +4,7 @@ Testing
 Unit testing
 ------
 
-We have written unit testing inside *srb/test* directory.
+We have written unit testing inside *src/test* directory.
 
 Compile testing bins command:
 
@@ -12,23 +12,82 @@ Compile testing bins command:
 
 then you can run:
 
-		$ ./test/test_recv_message [params same as 'peer']
+                $ cd test
+		$ ./run_peer.sh test_recv_message 1 A C
 
 to listen on the port
 
-and then, run these commands in another terminal:
+and then, you can run some tests in another terminal:
 
-		$ ./test/test_send_message [params same as 'peer']
-or
+1. Testing send receive packets
+"test_send_message" will send some packets to peers, including WHOHAS, IHAVE, GET, etc.. 
+It also tests if we can handle big chunk files (with chunks number larger than 75)
 
-		$ ./test/test_tcp_send [params]
-or
+To run the test, please simply type:
 
-		$ ./test/test_send_corrupt [params]
+		$ ./run_peer.sh test_send_message 1 Big C
 
-now you can see the result from the first terminal, if the transportation is
-successful.
+then you can verify the result output by "test_recv_message"
 
+
+2. Testing corrupted and malicious packets
+"test_send_corrupt" have two parts, in part 1, it will send some random message to peers.
+If the code is correct, a "packet invalid message would pop up from "test_recv_message"
+
+In second part, "test_send_corrupt" will be more malicious, it will test the peers' response to malicious packets,
+which including invalid packet length, header length, or chunk counts.
+Hopefully, our peer can handle these situation. It will show you invalid packet messages.
+
+To run the test, please simply type:
+
+		$ ./run_peer.sh test_send_corrupt 2 Big C
+
+then you can verify the result output from the "test_recv_message"
+
+3. Testing continuous sending and receiving
+In this part, you can run script to test the behaviour of our TCP implementation manually or automatically
+
+a) Manual testing on the "Uploader"
+   To see how the window size change during transportation. You can run the "receiver" and "uploader" by:
+
+                $ ./run_receiver.sh
+                $ ./run_uploader.sh
+
+   Then, you will be able to see the "uploader" keeps sending packets to receiver. 
+   You can send back ACK by typing the ACK number in the receiver.
+
+   To see how window size is changing, you can check the uploader's log by:
+          
+                $ tail -f upload.log
+
+b) Manul testing on the "downloader"
+   To see how the "downloader" reponse to different SEQ packets, You can run the "ownloader" and "Sender" by:
+                
+                $ ./run_download.sh
+                $ ./run_sender.sh
+
+   Now, you can send arbitrary SEQ packets by typing SEQ numbers in the "Sender".
+   
+   To check how "downloader" response, you can watch the log by:
+
+                $ tail -f download.log
+
+c) Automatically testing on the "downloader" and "uploader"
+
+   NOTICE: Before running the script, you may want to set up spiffy environment.
+
+   After that, you can run the "downloader" and "uploader" together:
+
+                $ ./run_download.sh
+                $ ./run_upload.sh
+
+   Now, the "uploader" is communicating with the "downloader". 
+   If you want to see detail log like how window size change, you can check their logs by:
+
+                $ tail -f upload.log
+                $ tail -f download.log
+
+NOTICE: During the testing, you can try to kill one peer to see how the other act.
 
 System testing
 ------
@@ -43,3 +102,80 @@ We've run test through several edge cases including:
 in our peer server system.
 
 We've also drawn several graphs to ensure TCP windowing is working as expected.
+
+Details on System Testing (Concurrent Testing):
+
+1. One to One Testing:
+
+a) Kill the Uploader
+   In this test, we start two peers, peer1 sends a download request to peer2. 
+   After they start transmitting data for some time, we kill the peer2 and wait for a period to restart the peer2.
+   
+   The expected behaviour of peer1 is that after several timeouts, it will resend WHOHAS (because no peers are alive now)
+   Then once peer2 respawn, it will get WHOHAS, and start transmission again.
+   If peer2 start before receiving the WHOHAS, it will receive dup ACKs, which will be simply discarded.
+   
+   In the end of the test, SHA1 sum will be checked to make sure that we download the right file.
+   
+   To run the testing script:
+
+                $ make test
+                $ cd test/multitest
+                $ ./one2one_kill_uploader.sh
+
+   To clean up peers, you can run:
+
+                $ ./cleanup.sh
+
+b) Kill the Downloader
+   This test is almost the same as last, but this time we kill the downloader and respawn it.
+   To run the script:
+
+                $ ./one2one_kill_downloader.sh
+               
+   To clean up peers, you can run:
+
+                $ ./cleanup.sh
+
+
+2. One to Many Testing:
+
+a) Multiple downloading
+   In this test, we will test if the peer can download multiple chunks simultaneously. To run the script:
+
+                $ ./multiple_download_test.sh
+
+   To clean up peers, you can run:
+
+                $ ./cleanup.sh
+
+
+b) Multiple uploading
+   In this test, we will test if the peer can upload multiple chunks simultaneously. To run the script:
+
+                $ ./multiple_upload_test.sh [num]
+
+   [num] indicates the maxmum connections allowed, in the test we will start 4 peers for downloading, 
+   so if you choose 3, then that means one peer will get stuck until someone finishes.
+
+   To clean up peers, you can run:
+
+                $ ./cleanup.sh
+
+   In this part, We can use the output windowsize file to verify if the bandwidth is fairly shared by all peers.
+
+   To draw the window size plot, you can run: (please make sure gnuplot is installed)
+   
+                $ ./drawpic.sh
+
+c) Chaos
+   In this test, we start 6 peers. 2 uploading, 4 downloading.
+   The uploading peer1 has only chunk A
+   The uploading peer2 has chunk A and B.
+
+   We start peer1 first, then we start 4 downloading peers.
+   After a while, we start peer2, wait some seconds, then kill peer1
+
+   Hopefully, all the downloading peers should be able to download all the files. To run the script:
+   
+                $ ./chaos.sh

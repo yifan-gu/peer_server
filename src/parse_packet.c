@@ -37,6 +37,10 @@ int parse_packet(packet_t *pkt, struct sockaddr_in peer_addr) {
     switch (GET_TYPE(pkt)) {
 
     case PACKET_TYPE_WHOHAS:
+        if(psvr.ul_num >= psvr.max_conn){
+            break;
+        }
+        
         if( ! peer_p->is_alive ){
             peer_p->is_alive = 1;
         }
@@ -47,6 +51,7 @@ int parse_packet(packet_t *pkt, struct sockaddr_in peer_addr) {
         break;
 
     case PACKET_TYPE_IHAVE:
+        printf("alive: %d, dowloading %d\n", peer_p->is_alive, peer_p->is_downloading);
         if( ! peer_p->is_alive ){
             peer_p->is_alive = 1;
         }
@@ -110,6 +115,7 @@ int parse_packet(packet_t *pkt, struct sockaddr_in peer_addr) {
         // if last packet:
         //  finish download
         if ( is_download_finished(&peer_p->dl)) {
+            psvr.dl_num --;
             logger(LOG_DEBUG, "Finish download");
             peer_p->is_downloading = 0;
             // if hash check succeed
@@ -119,6 +125,8 @@ int parse_packet(packet_t *pkt, struct sockaddr_in peer_addr) {
                 write_to_file(&peer_p->dl);
             }
             // find another one to download
+            psvr.getchunks.chunks[peer_p->dl.get_index].state = unfetched;
+
             if (psvr.dl_remain > 0) {
                 refresh_chunk_download();
             }

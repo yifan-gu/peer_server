@@ -150,13 +150,13 @@ void ul_handle_ack(upload_t *ul, uint32_t ack) {
         return;
     }
     // if ack == 0, just restart
-    if (0 == ack) {
+    if (ack <= 0) {
         //ul->stop_flag = 0;
         ul->timeout_cnt = 0;
         return;
     }
     
-    if ((ack > ul->max_pkt_sent) || (ack <= 0)) {
+    if ((ack > ul->max_pkt_sent) || (ack < ul->last_pkt_acked)) {
         logger(LOG_INFO, "invalid ack number");
         return;
     }

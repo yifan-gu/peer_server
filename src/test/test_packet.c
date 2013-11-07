@@ -69,7 +69,7 @@ int main(int argc, char *argv[])
     SET_HASH(&pkt, 1, hash2);
 
     printf("encoding\n");
-    ENCODE_PKT(buf, &pkt, 60);
+    ENCODE_PKT(buf, &pkt);
 
     print_packet(&pkt);
     

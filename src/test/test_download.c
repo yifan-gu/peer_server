@@ -41,22 +41,21 @@ int main(int argc, char *argv[])
 {
     fd_set readfds;
     struct sockaddr_in myaddr;
-    bt_config_t config;
     download_t dl;
 
     init_log("download.log");
     
-    bt_init(&config, argc, argv);
+    bt_init(&psvr.config, argc, argv);
 
 #ifdef TESTING
-    config.identity = 1; // your group number here
-    strcpy(config.chunk_file, "chunkfile");
-    strcpy(config.has_chunk_file, "haschunks");
+    psvr.config.identity = 1; // your group number here
+    strcpy(psvr.config.chunk_file, "chunkfile");
+    strcpy(psvr.config.has_chunk_file, "haschunks");
 #endif
 
-    bt_parse_command_line(&config);
+    bt_parse_command_line(&psvr.config);
 
-    if(peer_init(&config) < 0) {
+    if(peer_init(&psvr.config) < 0) {
         logger(LOG_ERROR, "Peer init failed!");
         exit(0);
     }
@@ -66,10 +65,12 @@ int main(int argc, char *argv[])
         exit(-1);
     }
 
+    psvr.sock = sock;
+
     bzero(&myaddr, sizeof(myaddr));
     myaddr.sin_family = AF_INET;
     myaddr.sin_addr.s_addr = htonl(INADDR_ANY);
-    myaddr.sin_port = htons(config.myport);
+    myaddr.sin_port = htons(psvr.config.myport);
 
     if (bind(sock, (struct sockaddr *) &myaddr, sizeof(myaddr)) == -1) {
         perror("peer_run could not bind socket");
@@ -77,7 +78,7 @@ int main(int argc, char *argv[])
     }
 
     /* init spiffy */
-    spiffy_init(config.identity, (struct sockaddr *) &myaddr, sizeof(myaddr));
+    spiffy_init(psvr.config.identity, (struct sockaddr *) &myaddr, sizeof(myaddr));
     
     printf("listening...\n");
     
@@ -105,23 +106,21 @@ int main(int argc, char *argv[])
         
         if (nfds > 0) {
             if (FD_ISSET(sock, &readfds)) {
-                printf("receive\n");
                 ret = spiffy_recvfrom(sock, buf, PACKET_SIZE, 0, &addr, &socklen);
 
                 if (ret <= 0) {
                     logger(LOG_ERROR, "recvfrom() error");
                     continue;
                 }
-                printf("decode\n");
                 DECODE_PKT(buf, &pkt, ret);
                 
                 printf("recv a packet\n");
                 //print_packet(&pkt);
                 logger(LOG_DEBUG, "recv seq: %d\n", GET_SEQ(&pkt));
+                printf("recv seq: %d\n", GET_SEQ(&pkt));
                 printf("%d circle\n", ++i);
                 dl_dump(&dl, log_fp);
 
-                printf("handle\n");
                 dl_recv(&dl, &pkt);
             }
 

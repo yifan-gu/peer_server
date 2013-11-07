@@ -17,8 +17,8 @@
 extern PeerList peerlist;
 extern ChunkList haschunks;
 extern FILE *log_fp;
+extern PeerServer psvr;
 
-bt_config_t config;
 int sock;
 
 int main(int argc, char *argv[])
@@ -30,17 +30,17 @@ int main(int argc, char *argv[])
 
     init_log("upload.log");
     
-    bt_init(&config, argc, argv);
+    bt_init(&psvr.config, argc, argv);
     
 #ifdef TESTING
-    config.identity = 1; // your group number here
-    strcpy(config.chunk_file, "chunkfile");
-    strcpy(config.has_chunk_file, "haschunks");
+    psvr.config.identity = 1; // your group number here
+    strcpy(psvr.config.chunk_file, "chunkfile");
+    strcpy(psvr.config.has_chunk_file, "haschunks");
 #endif
 
-    bt_parse_command_line(&config);
+    bt_parse_command_line(&psvr.config);
 
-    if(peer_init(&config) < 0) {
+    if(peer_init(&psvr.config) < 0) {
         logger(LOG_ERROR, "Peer init failed!");
         exit(0);
     }
@@ -50,11 +50,13 @@ int main(int argc, char *argv[])
         perror("peer_run could not create socket");
         exit(-1);
     }
+    psvr.sock = sock;
+
 
     bzero(&myaddr, sizeof(myaddr));
     myaddr.sin_family = AF_INET;
     myaddr.sin_addr.s_addr = htonl(INADDR_ANY);
-    myaddr.sin_port = htons(config.myport);
+    myaddr.sin_port = htons(psvr.config.myport);
 
     if (bind(sock, (struct sockaddr *) &myaddr, sizeof(myaddr)) == -1) {
         perror("peer_run could not bind socket");
@@ -62,7 +64,7 @@ int main(int argc, char *argv[])
     }
     
     /* init spiffy */
-    spiffy_init(config.identity, (struct sockaddr *) &myaddr, sizeof(myaddr));
+    spiffy_init(psvr.config.identity, (struct sockaddr *) &myaddr, sizeof(myaddr));
     
     int index = 1; // the peer's index in the peerlist
     if (ul_init(&ul, index, 0) < 0) {
@@ -95,8 +97,10 @@ int main(int argc, char *argv[])
                 }
 
                 DECODE_PKT(buf, &pkt, ret);
+                //print_packet(&pkt);
                 if (PACKET_TYPE_ACK == GET_TYPE(&pkt)) {
                     logger(LOG_DEBUG, "recv an ack: %d\n", GET_ACK(&pkt));
+                    printf("recv an ack: %d\n", GET_ACK(&pkt));
                     printf("%d circle\n", ++i);
                     ul_dump(&ul, log_fp);
 

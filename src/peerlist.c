@@ -31,6 +31,7 @@ int init_peerlist(PeerList *pl, bt_peer_t *peers, int selfid) {
             continue;
 
         // init peer
+        pl->peers[i].id = p->id;
         pl->peers[i].addr = p->addr;
         init_peer(&pl->peers[i]);
         i ++;
