@@ -61,8 +61,8 @@ int parse_packet(packet_t *pkt, struct sockaddr_in peer_addr) {
 
         // parse the ihave packet chunks into the peer's corresponding information
         if(parse_download(pkt, p_index) < 0) {
-            logger(LOG_ERROR, "Failed in parsing IHAVE packet from %s:%d!\n"
-                   , inet_ntoa(peer_addr.sin_addr), ntohs(peer_addr.sin_port));
+            logger(LOG_ERROR, "Failed in parsing IHAVE packet from %s:%d!\n",
+                   inet_ntoa(peer_addr.sin_addr), ntohs(peer_addr.sin_port));
             return -1;
         }
 

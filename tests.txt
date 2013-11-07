@@ -169,11 +169,12 @@ b) Multiple uploading
                 $ ./drawpic.sh
 
 c) Chaos
-   In this test, we start 6 peers. 2 uploading, 4 downloading.
-   The uploading peer1 has only chunk A
-   The uploading peer2 has chunk A and B.
+   In this test, we start 6 peers. both downloading and uploading
+   The peer1 has only file A, asking for file A and B
+   The peer2 has file A and B asking for file C(file A and B)
+   The peer8 to peer11 has file C and asking for A or B
 
-   We start peer1 first, then we start 4 downloading peers.
+   We start peer1 first, then we start peer8 to peer11. 
    After a while, we start peer2, wait some seconds, then kill peer1
 
    Hopefully, all the downloading peers should be able to download all the files. To run the script:

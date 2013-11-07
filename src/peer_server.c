@@ -192,7 +192,9 @@ int check_all_timeout() {
 
     for (i = 0; i < psvr.peerlist.count; i++) {
         peer_p = &(psvr.peerlist.peers[i]);
-
+        /*printf("dlnum :%d, dl_remain: %d\n", psvr.dl_num, psvr.dl_remain);
+          printf("ulnum :%d\n", psvr.ul_num);*/
+        
         if(! peer_p->is_alive )
             continue;
 
