@@ -2,7 +2,8 @@ IDIR =src/include
 ODIR=src/obj
 SRCDIR=src
 TESTDIR=src/test
-TESTBINDIR=test
+TESTBINDIR=test/bin
+MULTITEST=test/multitest
 
 CC 		= gcc
 CFLAGS=-I$(IDIR) -Wall -Werror -DDEBUG
@@ -29,13 +30,14 @@ TEST_OBJS = $(patsubst %,$(ODIR)/%,$(_TEST_OBJS))
 
 BINS = peer make-chunks
 
-TESTBINS = test_packet test_send_message test_recv_message test_send_corrupt test_upload test_receiver \
-	test_download test_sender
+TESTBINS = test_send_message test_recv_message test_send_corrupt test_upload test_receiver \
+	test_download test_sender #test_packet
 
 # Explit build and testing targets
 all: ${BINS}
 
-test: ${TESTBINS}
+test: ${TESTBINS} peer
+	cp peer ${MULTITEST}
 
 peer: $(OBJS)
 	$(CC) $(CFLAGS) $(OBJS) -o $@ $(LDFLAGS)
@@ -53,10 +55,10 @@ $(TESTDIR)/%.o: $(TESTDIR)/%.c $(HEADERS)
 clean:
 	@rm -f $(BINS) \
 		$(ODIR)/* $(SRCDIR)/*~ $(IDIR)/*~ $(SRCDIR)/*.orig $(IDIR)/*.orig $(TESTBINDIR)/* $(TESTDIR)/*.o \
-		output.dat verytemp problem2-peer.txt
+		output.dat verytemp problem2-peer.txt $(MULTITEST)/tmp/*
 
-test_packet: $(TEST_OBJS) $(TESTDIR)/test_packet.o
-	$(CC) -DTESTING_PACKET $(TEST_OBJS) $(TESTDIR)/test_packet.o -o $(TESTBINDIR)/test_packet $(LDFLAGS)
+#test_packet: $(TEST_OBJS) $(TESTDIR)/test_packet.o
+#	$(CC) -DTESTING_PACKET $(TEST_OBJS) $(TESTDIR)/test_packet.o -o $(TESTBINDIR)/test_packet $(LDFLAGS)
 
 test_send_message: $(TEST_OBJS) $(TESTDIR)/test_send_message.o
 	$(CC) -DDEBUG $(TEST_OBJS) $(TESTDIR)/test_send_message.o -o $(TESTBINDIR)/test_send_message $(LDFLAGS)

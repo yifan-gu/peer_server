@@ -5,10 +5,6 @@
 #include "peerlist.h"
 #include <peer_server.h>
 
-#ifdef TESTING_PACKET
-extern void test_message(uint8_t *buf, int i, ChunkList *cl);
-#endif
-
 extern PeerServer psvr;
 
 /**
@@ -20,7 +16,7 @@ extern PeerServer psvr;
  * @param buf, data buffer
  * @param len, data buffer length
  */
-static void send_udp(int socket, PeerList *p, int p_index, int p_count, uint8_t *buf, size_t len) {
+void send_udp(int socket, PeerList *p, int p_index, int p_count, uint8_t *buf, size_t len) {
     int i, ret;
 
     for (i = 0; i < p_count; i++) {
@@ -145,11 +141,7 @@ void send_packet(pkt_param_t *pp) {
         }
 
         len = GET_PKT_LEN(&pkt);
-        ENCODE_PKT(buf, &pkt, GET_PKT_LEN(&pkt));
-
-        #ifdef TESTING_PACKET
-        test_message(buf, i, c);
-        #endif
+        ENCODE_PKT(buf, &pkt);
 
         send_udp(socket, &psvr.peerlist, p_index, p_count, buf, len);
     }
@@ -162,13 +154,50 @@ void send_packet(pkt_param_t *pp) {
  */
 int valid_packet(packet_t *pkt) {
     if ( GET_MAGIC(pkt) != MAGIC) {
+        logger(LOG_INFO, "Invalid Magic");
         return 0;
     }
 
     if (GET_VERSION(pkt) != VERSION) {
+        logger(LOG_INFO, "Invalid Version");
         return 0;
     }
 
+    if (GET_PKT_LEN(pkt) < GET_HDR_LEN(pkt)
+        || GET_HDR_LEN(pkt) < HEADER_SIZE) { // invalid header len
+        logger(LOG_INFO, "Invalid Hdr Len: %d or Pkt Len: %d", GET_HDR_LEN(pkt), GET_PKT_LEN(pkt));
+        return 0;
+    }
+
+    if (GET_PKT_LEN(pkt) > PACKET_SIZE) {
+        logger(LOG_INFO, "Invalid Pkt Len: %d", GET_PKT_LEN(pkt));
+        return 0;
+    }
+
+    switch (GET_TYPE(pkt)) {
+    case PACKET_TYPE_WHOHAS:
+    case PACKET_TYPE_IHAVE:
+        if (GET_DATA_LEN(pkt) < 4) {
+            logger(LOG_INFO, "Invalid Data Len: %d, too small!", GET_DATA_LEN(pkt));
+            return 0;
+        }
+
+        if (GET_CHUNK_CNT(pkt) <= 0
+            || GET_CHUNK_CNT(pkt) > (GET_DATA_LEN(pkt) - 4) / SHA1_HASH_SIZE) {
+            logger(LOG_INFO, "Invalid CHUNK CNT: %d, max is: %d",
+                   GET_CHUNK_CNT(pkt), (GET_DATA_LEN(pkt) - 4) / SHA1_HASH_SIZE);
+            return 0;
+        }
+        break;
+
+    case PACKET_TYPE_GET:
+        if (GET_DATA_LEN(pkt) < SHA1_HASH_SIZE) {
+            logger(LOG_INFO, "Invalid Data Len for GET: %d, too small!", GET_DATA_LEN(pkt));
+            return 0;
+        }
+        break;
+    }
+    
     return 1;
 }
 
@@ -192,10 +221,10 @@ void print_packet(packet_t *pkt) {
     printf("| Version: %d\t|\n", GET_VERSION(pkt));
     printf("| Type: %d\t|\n", GET_TYPE(pkt));
     printf("| Hdr_len: %d\t|\n", GET_HDR_LEN(pkt));
-    printf("| Pkt_len: %d\t|\n", GET_PKT_LEN(pkt));
+    printf("| Pkt_len: %4d |\n", GET_PKT_LEN(pkt));
     printf("| Seq: %u\t|\n", GET_SEQ(pkt));
     printf("| Ack: %u\t|\n", GET_ACK(pkt));
-    printf("| Data_len: %d\t|\n", GET_DATA_LEN(pkt));
+    printf("| Data_len: %4d|\n", GET_DATA_LEN(pkt));
 
     if (nondata && PACKET_TYPE_GET != type) {
         printf("| Chunk_cnt: %d\t|\n", GET_CHUNK_CNT(pkt));

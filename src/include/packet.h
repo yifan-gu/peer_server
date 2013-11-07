@@ -23,9 +23,10 @@ uint8_t hash_bin_buf[SHA1_HASH_SIZE];
 #define VERSION 1
 #define HEADER_SIZE 16
 #define PACKET_SIZE 1500 // udp packet size
-#define MAX_OFFSET (MAX_PAYLOAD_SIZE - SHA1_HASH_SIZE)
+
 
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
+#define MAX(a, b) ((a) > (b) ? (a) : (b))
 /**
  * the max hash number in a packet
  */
@@ -34,7 +35,8 @@ uint8_t hash_bin_buf[SHA1_HASH_SIZE];
 /**
  * to be compatible with other implementations
  */
-#define EXT_HEADER_SIZE(pkt) (HEADER_SIZE - (pkt)->hdr_len)
+#define MAX_OFFSET(pkt) (MAX(GET_DATA_LEN(pkt) - SHA1_HASH_SIZE, 0))
+#define EXT_HEADER_SIZE(pkt) ((pkt)->hdr_len - HEADER_SIZE)
 #define MAX_PAYLOAD_SIZE (PACKET_SIZE - HEADER_SIZE)
 #define PAYLOAD_SIZE 1024
 /**
@@ -51,15 +53,13 @@ uint8_t hash_bin_buf[SHA1_HASH_SIZE];
     (pkt)->seq = ntohl((pkt)->seq);             \
     (pkt)->ack = ntohl((pkt)->ack)
 
-#define ENCODE_PKT(buf, pkt, size)                      \
-    size_t s = size; /* avoid evaluation after hton */  \
+#define ENCODE_PKT(buf, pkt)                            \
     (pkt)->magic = htons((pkt)->magic);                 \
     (pkt)->hdr_len = htons((pkt)->hdr_len);             \
     (pkt)->pkt_len = htons((pkt)->pkt_len);             \
     (pkt)->seq = htonl((pkt)->seq);                     \
     (pkt)->ack = htonl((pkt)->ack);                     \
-    memcpy((buf), (pkt), s);                            
-         
+    memcpy((buf), (pkt), ntohs((pkt)->pkt_len));
 
 /**
  * a couple of macros to make life easier
@@ -85,21 +85,21 @@ uint8_t hash_bin_buf[SHA1_HASH_SIZE];
 #define GET_ACK(pkt) ((pkt)->ack)
 #define SET_ACK(pkt, v) ((pkt)->ack = (v))
 
-#define GET_DATA_LEN(pkt) ((pkt)->pkt_len - (pkt)->hdr_len - EXT_HEADER_SIZE((pkt)))
-#define GET_DATA(pkt) ((pkt)->payload + MIN(MAX_OFFSET, EXT_HEADER_SIZE(pkt)))
+#define GET_DATA_LEN(pkt) ((pkt)->pkt_len - (pkt)->hdr_len)
+#define GET_DATA(pkt) ((pkt)->payload + MIN(MAX_OFFSET(pkt), EXT_HEADER_SIZE(pkt)))
 
 /**
  * Get / Set chunk numbers, EXT_HEADER_SIZE is reserved for other implementations
  * @param pkt, a pointer to a packet_t struct
  * @param cnt, the chunk number to be set
  */
-#define GET_CHUNK_CNT(pkt) ((pkt)->payload[MIN(MAX_OFFSET, EXT_HEADER_SIZE(pkt))])
+#define GET_CHUNK_CNT(pkt) ((pkt)->payload[MIN(MAX_OFFSET(pkt), EXT_HEADER_SIZE(pkt))])
 #define SET_CHUNK_CNT(pkt, cnt) ((pkt)->payload[0+EXT_HEADER_SIZE(pkt)] = (cnt))
 
 /**
  * helper to ensure offset will not overflow
  */
-#define HASH_OFFSET(pkt, n) (MIN(MAX_OFFSET, EXT_HEADER_SIZE(pkt)       \
+#define HASH_OFFSET(pkt, n) (MIN(MAX_OFFSET(pkt), EXT_HEADER_SIZE(pkt)  \
                                  + (GET_TYPE(pkt) == PACKET_TYPE_GET ? 0 : 4) \
                                  + (n)*SHA1_HASH_SIZE))
 /**

@@ -37,6 +37,10 @@ int parse_packet(packet_t *pkt, struct sockaddr_in peer_addr) {
     switch (GET_TYPE(pkt)) {
 
     case PACKET_TYPE_WHOHAS:
+        if(psvr.ul_num >= psvr.max_conn){
+            break;
+        }
+        
         if( ! peer_p->is_alive ){
             peer_p->is_alive = 1;
         }

@@ -5,6 +5,7 @@
 #include <upload.h>
 
 typedef struct _Peer {
+    short id;
     struct sockaddr_in addr;
 
     Linlist hasqueue;

@@ -9,6 +9,7 @@
 
 extern PeerList peerlist;
 extern ChunkList haschunks;
+extern PeerServer psvr;
 
 int sock;
 
@@ -16,19 +17,18 @@ int main(int argc, char *argv[])
 {
     fd_set readfds;
     struct sockaddr_in myaddr;
-    bt_config_t config;
-
-    bt_init(&config, argc, argv);
+    init_log(NULL);
+    bt_init(&psvr.config, argc, argv);
 
 #ifdef TESTING
-    config.identity = 1; // your group number here
-    strcpy(config.chunk_file, "chunkfile");
-    strcpy(config.has_chunk_file, "haschunks");
+    psvr.config.identity = 1; // your group number here
+    strcpy(psvr.config.chunk_file, "chunkfile");
+    strcpy(psvr.config.has_chunk_file, "haschunks");
 #endif
 
-    bt_parse_command_line(&config);
+    bt_parse_command_line(&psvr.config);
 
-    if(peer_init(&config) < 0) {
+    if(peer_init(&psvr.config) < 0) {
         logger(LOG_ERROR, "Peer init failed!");
         exit(0);
     }
@@ -41,7 +41,7 @@ int main(int argc, char *argv[])
     bzero(&myaddr, sizeof(myaddr));
     myaddr.sin_family = AF_INET;
     myaddr.sin_addr.s_addr = htonl(INADDR_ANY);
-    myaddr.sin_port = htons(config.myport);
+    myaddr.sin_port = htons(psvr.config.myport);
 
     if (bind(sock, (struct sockaddr *) &myaddr, sizeof(myaddr)) == -1) {
         perror("peer_run could not bind socket");
@@ -49,7 +49,7 @@ int main(int argc, char *argv[])
     }
 
     /* init spiffy */
-    spiffy_init(config.identity, (struct sockaddr *) &myaddr, sizeof(myaddr));
+    spiffy_init(psvr.config.identity, (struct sockaddr *) &myaddr, sizeof(myaddr));
     printf("listening...\n");
     
     while (1) {
@@ -73,11 +73,14 @@ int main(int argc, char *argv[])
                     logger(LOG_ERROR, "recvfrom() error");
                     continue;
                 }
-
+                
                 DECODE_PKT(buf, &pkt, ret);
-
                 printf("recv a packet\n");
-                print_packet(&pkt);
+                
+                if (valid_packet(&pkt)) {
+                    printf("validation ok\n");
+                    print_packet(&pkt);
+                }
             }
         }
     }
