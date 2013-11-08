@@ -37,15 +37,20 @@ int parse_packet(packet_t *pkt, struct sockaddr_in peer_addr) {
     switch (GET_TYPE(pkt)) {
 
     case PACKET_TYPE_WHOHAS:
+        printf("Peer[%d] is asking for chunks\n", peer_p->id);
         if(psvr.ul_num >= psvr.max_conn){
+            printf("Exceeding max connections[%d], won't reply\n", psvr.max_conn);
             break;
         }
         
         if( ! peer_p->is_alive ){
             peer_p->is_alive = 1;
         }
-        if( peer_p->is_uploading )
+        if( peer_p->is_uploading ) {
+            printf("Exceeding max connections[%d], won't reply\n", psvr.max_conn);
             break;
+        }
+        
         logger(LOG_DEBUG, "receive whohas\n");
         send_ihave(pkt, p_index);
         break;
@@ -110,6 +115,7 @@ int parse_packet(packet_t *pkt, struct sockaddr_in peer_addr) {
             break;
 
         logger(LOG_DEBUG, "Receive data: %d", GET_SEQ(pkt));
+        print_download_progress(peer_p);
         // update download
         update_download(&peer_p->dl, pkt);
         // if last packet:
@@ -117,7 +123,7 @@ int parse_packet(packet_t *pkt, struct sockaddr_in peer_addr) {
         if ( is_download_finished(&peer_p->dl)) {
             /*finish_download(&peer_p->dl);*/
             psvr.dl_num --;
-            logger(LOG_DEBUG, "Finish download %d", psvr.dl_remain);
+            logger(LOG_DEBUG, "Finish download chunk %d", psvr.dl_remain);
             peer_p->is_downloading = 0;
             // if hash check succeed
             //   write to file

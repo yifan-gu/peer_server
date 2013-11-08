@@ -12,7 +12,7 @@ echo "wait 5s to start peers"
 
 sleep 5
 
-./peer -p nodes.map -i 1 -c etc/C.chunks -f etc/C.masterchunks -m 3 &
+./peer -p nodes.map -i 2 -c etc/C.chunks -f etc/C.masterchunks -m $1 &
 
 sleep 1
 

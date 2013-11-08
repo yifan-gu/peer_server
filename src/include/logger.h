@@ -6,7 +6,11 @@
 #define LOG_WARN 2
 #define LOG_ERROR 3
 
-#define LOGLEVEL 4
+#ifdef DEBUG
+#define LOGLEVEL 0
+#else
+#define LOGLEVEL 1
+#endif
 //#define LOGLEVEL LOG_INFO
 //#define LOGLEVEL LOG_WARN
 //#define LOGLEVEL -1

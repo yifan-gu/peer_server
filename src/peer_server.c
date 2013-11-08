@@ -204,6 +204,7 @@ int check_all_timeout() {
           )
         {
             // stop download activity
+            printf("Too many timeouts, abort downloading from peer[%d]\n", peer_p->id);
             kill_download(&peer_p->dl);
             // stop upload activity for peer i if existed
             if (peer_p->is_uploading) {
@@ -219,6 +220,7 @@ int check_all_timeout() {
           )
         {
             // stop upload activity
+            printf("Too many timeouts, abort uploading to peer[%d]\n", peer_p->id);
             kill_upload(&peer_p->ul);
             // stop download activity and find another one to download for peer i if existed
             if (peer_p->is_downloading) {

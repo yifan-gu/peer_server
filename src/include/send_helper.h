@@ -56,6 +56,11 @@ int is_upload_finished(Upload *ul);
  */
 int finish_upload(Upload *ul);
 
+/**
+ * print download progress
+ */
+void print_download_progress(Peer* p);
+    
 #define kill_upload(ul) (finish_upload((ul)))
 
 #endif // for #ifndef _SEND_HELPER_H

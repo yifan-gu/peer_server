@@ -4,7 +4,7 @@ import sys,os
 import subprocess as sp
 
 spiffy_cmd = "export SPIFFY_ROUTER=127.0.0.1:12345 && "
-sim_cmd = "perl ./hupsim.pl -m topo.map -n nodes.map -p 12345 -v 2"
+sim_cmd = "perl ./hupsim.pl -m topo.map -n nodes.map -p 12345 -v 0"
 
 A_cmd = "./peer -p nodes.map -c etc/A.haschunks -f etc/C.masterchunks -m 4 -i "
 B_cmd = "./peer -p nodes.map -c etc/B.haschunks -f etc/C.masterchunks -m 4 -i "

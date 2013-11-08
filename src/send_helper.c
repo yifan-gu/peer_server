@@ -23,6 +23,7 @@ void send_whohas() {
     param.c_count = -1;
 
     param.type = PACKET_TYPE_WHOHAS;
+    printf("Finding chunks...\n");
     send_packet(&param);
 }
 
@@ -46,7 +47,7 @@ void send_ihave(packet_t *pkt, int p_index) {
 
     // nothing to send
     if(!k) return;
-
+    
     psvr.ihavechunks.count = k;
 
     // send IHAVE packet
@@ -61,7 +62,7 @@ void send_ihave(packet_t *pkt, int p_index) {
 
 
     param.type = PACKET_TYPE_IHAVE;
-    /*printf("sendIHAVE\n");*/
+    printf("Replying IHAVE...\n");
     send_packet(&param);
 }
 
@@ -250,3 +251,26 @@ int finish_upload(Upload *ul) {
     return ul_deinit(ul);
 }
 
+/**
+ * print download progress
+ */
+void print_download_progress(Peer* p) {
+    int c_id;
+    int p_id;
+    int progress;
+    
+    if (0 == p->dl.data_length) {
+        return;
+    }
+    
+    c_id = psvr.getchunks.chunks[p->dl.get_index].id;
+    p_id = p->id;
+    progress = p->dl.next_pkt_expected * 100 / (BT_CHUNK_SIZE / p->dl.data_length);
+    
+    printf("Downloading chunk[%d] from peer[%d]: %d%% completed\r", c_id, p_id, MIN(100, progress));
+    if (progress >= 100) {
+        printf("\n");
+    }
+
+    return;
+}

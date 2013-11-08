@@ -20,7 +20,7 @@ echo "GET etc/B.chunks tmp/foo.foo1" | ./peer -p nodes.map -i 1 -c etc/C.chunks 
 
 sleep 10
 
-pid=$(ps -ef |grep "A.chunks" | grep -v "grep" |  awk '{ print $2 }')
+pid=$(ps -ef |grep "C.chunks" | grep -v "grep" |  awk '{ print $2 }')
 
 kill $pid
 

@@ -111,6 +111,7 @@ void process_get(char *chunkfile, char *outputfile) {
     psvr.dl_remain = psvr.getchunks.count;
 
     // send whohas
+    printf("Trying to get the file, this will take some time, please wait\n");
     send_whohas();
     psvr.last_whohas = get_timestamp_now();
 }

@@ -6,7 +6,7 @@ Unit testing
 
 We have written unit testing inside *src/test* directory.
 
-Compile testing bins command:
+Compile testing bins command (NOTICE: You may need to add DEBUG flag to in the Makefile to make the peer more verbose):
 
 		$ Make test
 

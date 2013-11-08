@@ -38,15 +38,25 @@ pid=$(ps -ef |grep "\-i 1 \-c etc" | grep -v "grep" |  awk '{ print $2 }')
 
 kill $pid
 
-sleep 120
+sleep 150
 
-echo "have slept for 60s, hopefully it finishes downloading..."
+echo "have slept for 150s, hopefully it finishes downloading..."
 
 sleep 1
 
 echo "check sha1sum"
 
 sleep 1
+
+a=$(sha1sum tmp/foo.foo2 | awk '{ print $1 }')
+b=$(sha1sum etc/C.tar | awk ' { print $1 }')
+
+if [ "${a}" = "${b}" ];
+then
+echo "sha1sum checking OK for foo2!"
+else
+echo "sha1sum cheching Failed for foo2!"
+fi
 
 a=$(sha1sum tmp/foo.foo8 | awk '{ print $1 }')
 b=$(sha1sum etc/A.tar | awk ' { print $1 }')
