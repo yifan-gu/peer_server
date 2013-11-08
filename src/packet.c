@@ -128,27 +128,14 @@ void send_packet(pkt_param_t *pp) {
                 }
             }
 
-            if (type == PACKET_TYPE_WHOHAS) {
-                printf("before\n");
-                print_packet(&pkt);
-            }
-            
             /* update packet length and chunk counts */
             SET_PKT_LEN(&pkt, GET_PKT_LEN(&pkt) + SHA1_HASH_SIZE * cnt);
-
-            if (type == PACKET_TYPE_WHOHAS) {
-                printf("after\n");
-                print_packet(&pkt);
-            }
-            
-
 
             /* no CHUNK_CNU for GET */
             if (PACKET_TYPE_GET != type) {
                 SET_CHUNK_CNT(&pkt, cnt);
             }
             
-
             /* set payload data */
         } else if (PACKET_TYPE_DATA == type && NULL != payload) {
             

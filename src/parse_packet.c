@@ -51,7 +51,7 @@ int parse_packet(packet_t *pkt, struct sockaddr_in peer_addr) {
         break;
 
     case PACKET_TYPE_IHAVE:
-        printf("alive: %d, dowloading %d\n", peer_p->is_alive, peer_p->is_downloading);
+        logger(LOG_DEBUG, "alive: %d, dowloading %d\n", peer_p->is_alive, peer_p->is_downloading);
         if( ! peer_p->is_alive ){
             peer_p->is_alive = 1;
         }

@@ -35,7 +35,7 @@ void peer_run(bt_config_t *config);
 
 int main(int argc, char **argv) {
 
-    init_log("log.log");
+    init_log(NULL);
 
     bt_init(&psvr.config, argc, argv);
 
@@ -80,7 +80,7 @@ void process_inbound_udp(int sock) {
 
 
     DECODE_PKT(buf, &pkt, ret);
-    print_packet(&pkt);
+    //print_packet(&pkt);
 
     if (!valid_packet(&pkt)) {
         logger(LOG_INFO, "Invalid packet received!");

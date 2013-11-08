@@ -146,7 +146,7 @@ static void ul_loss(upload_t *ul) {
  * handle the ack
  */
 void ul_handle_ack(upload_t *ul, uint32_t ack) {
-    ul_dump(ul, log_fp);
+    //ul_dump(ul, log_fp);
     if (ul->finished) {
         return;
     }
